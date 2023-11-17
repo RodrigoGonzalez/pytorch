@@ -80,8 +80,9 @@ def reduce_add(inputs, destination=None):
         if inp.size() != input_size:
             got = 'x'.join(str(x) for x in inp.size())
             expected = 'x'.join(str(x) for x in input_size)
-            raise ValueError("input {} has invalid size: got {}, but expected "
-                             "{}".format(i, got, expected))
+            raise ValueError(
+                f"input {i} has invalid size: got {got}, but expected {expected}"
+            )
     if destination is None:
         destination = torch.cuda.current_device()
     with torch.cuda.device(destination):
@@ -144,9 +145,9 @@ def scatter(tensor, devices, chunk_sizes=None, dim=0, streams=None):
     if chunk_sizes is None:
         chunks = tensor.chunk(len(devices), dim)
     else:
-        assert sum(chunk_sizes) == tensor.size(dim), "given chunk sizes " \
-            "don't sum up to the tensor's size (sum(chunk_sizes) == {}, but " \
-            "expected {})".format(sum(chunk_sizes), tensor.size(dim))
+        assert sum(chunk_sizes) == tensor.size(
+            dim
+        ), f"given chunk sizes don't sum up to the tensor's size (sum(chunk_sizes) == {sum(chunk_sizes)}, but expected {tensor.size(dim)})"
         assert min(chunk_sizes) > 0, "got a negative chunk_size"
         chunks = [tensor.narrow(dim, start - size, size)
                   for start, size in zip(_accumulate(chunk_sizes), chunk_sizes)]
@@ -184,8 +185,9 @@ def gather(tensors, dim=0, destination=None):
         if list(tensor.size()) != expected_size:
             got = 'x'.join(str(x) for x in tensor.size())
             expected = 'x'.join(str(x) for x in expected_size)
-            raise ValueError("gather got an input of invalid size: got {}, "
-                             "but expected {}".format(got, expected))
+            raise ValueError(
+                f"gather got an input of invalid size: got {got}, but expected {expected}"
+            )
         total_size += tensor.size(dim)
     expected_size[dim] = total_size
     expected_size = torch.Size(expected_size)

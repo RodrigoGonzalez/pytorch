@@ -9,10 +9,11 @@ class OptionalArguments(CWrapPlugin):
         new_options = []
         for declaration in declarations:
             for option in declaration['options']:
-                optional_args = []
-                for i, arg in enumerate(option['arguments']):
-                    if 'default' in arg:
-                        optional_args.append(i)
+                optional_args = [
+                    i
+                    for i, arg in enumerate(option['arguments'])
+                    if 'default' in arg
+                ]
                 for permutation in product((True, False), repeat=len(optional_args)):
                     option_copy = deepcopy(option)
                     for i, bit in zip(optional_args, permutation):
@@ -28,10 +29,7 @@ class OptionalArguments(CWrapPlugin):
 
     def filter_unique_options(self, options):
         def signature(option, kwarg_only_count):
-            if kwarg_only_count == 0:
-                kwarg_only_count = None
-            else:
-                kwarg_only_count = -kwarg_only_count
+            kwarg_only_count = None if kwarg_only_count == 0 else -kwarg_only_count
             arg_signature = '#'.join(
                 arg['type']
                 for arg in option['arguments'][:kwarg_only_count]
@@ -42,7 +40,8 @@ class OptionalArguments(CWrapPlugin):
                 arg['name'] + '#' + arg['type']
                 for arg in option['arguments'][kwarg_only_count:]
                 if not arg.get('ignore_check'))
-            return arg_signature + "#-#" + kwarg_only_signature
+            return f"{arg_signature}#-#{kwarg_only_signature}"
+
         seen_signatures = set()
         unique = []
         for option in options:

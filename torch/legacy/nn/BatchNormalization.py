@@ -77,9 +77,12 @@ class BatchNormalization(Module):
     def _checkInputDim(self, input):
         if input.dim() != self.nDim:
             raise RuntimeError(
-                'only mini-batch supported ({}D tensor), got {}D tensor instead'.format(self.nDim, input.dim()))
+                f'only mini-batch supported ({self.nDim}D tensor), got {input.dim()}D tensor instead'
+            )
         if input.size(1) != self.running_mean.nelement():
-            raise RuntimeError('got {}-feature tensor, expected {}'.format(input.size(1), self.running_mean.nelement()))
+            raise RuntimeError(
+                f'got {input.size(1)}-feature tensor, expected {self.running_mean.nelement()}'
+            )
 
     def _makeContiguous(self, input, gradOutput=None):
         if not input.is_contiguous():

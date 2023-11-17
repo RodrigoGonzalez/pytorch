@@ -44,7 +44,11 @@ class Function(object):
         self.arguments.append(arg)
 
     def __repr__(self):
-        return self.name + '(' + ', '.join(map(lambda a: a.__repr__(), self.arguments)) + ')'
+        return (
+            f'{self.name}('
+            + ', '.join(map(lambda a: a.__repr__(), self.arguments))
+            + ')'
+        )
 
 
 class Argument(object):
@@ -55,7 +59,7 @@ class Argument(object):
         self.is_optional = is_optional
 
     def __repr__(self):
-        return self.type + ' ' + self.name
+        return f'{self.type} {self.name}'
 
 
 def parse_header(path):
@@ -75,8 +79,7 @@ def parse_header(path):
     # Flatten lines
     new_lines = []
     for l, c in lines:
-        for split in l:
-            new_lines.append((split, c))
+        new_lines.extend((split, c) for split in l)
     lines = new_lines
     del new_lines
     # Remove unnecessary whitespace
@@ -95,7 +98,7 @@ def parse_header(path):
         elif l:
             t, name = l.split()
             if '*' in name:
-                t = t + '*'
+                t = f'{t}*'
                 name = name[1:]
             generic_functions[-1].add_argument(Argument(t, name, '[OPTIONAL]' in c))
     return generic_functions
@@ -103,10 +106,10 @@ def parse_header(path):
 
 def load_backend(t, lib, generic_functions, mixins=tuple()):
     lib_handle = importlib.import_module(lib)
-    backend_name = 'THNN{}Backend'.format(t)
+    backend_name = f'THNN{t}Backend'
     backend = type(backend_name, mixins + (THNNBackendBase,), {})()
     for function in generic_functions:
-        full_fn_name = '{}{}'.format(t, function.name)
+        full_fn_name = f'{t}{function.name}'
         fn = getattr(lib_handle, full_fn_name)
         backend.register_method(function.name, fn)
     return backend

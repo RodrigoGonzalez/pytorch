@@ -72,8 +72,9 @@ class ConvNd(Function):
             else:
                 output_size += ((in_size + (2 * pad) - kernel) // stride + 1,)
         if not all(map(lambda s: s > 0, output_size)):
-            raise ValueError("convolution input is too small (output would be {})".format(
-                             'x'.join(map(str, output_size))))
+            raise ValueError(
+                f"convolution input is too small (output would be {'x'.join(map(str, output_size))})"
+            )
         return output_size
 
     def _update_output(self, input, weight, bias):
@@ -95,7 +96,7 @@ class ConvNd(Function):
                 del self._cudnn_info
             return output
 
-        self._bufs = [[] for g in range(self.groups)]
+        self._bufs = [[] for _ in range(self.groups)]
         output = self._thnn('update_output', input, weight, bias)
         if not self.requires_grad:
             del self._bufs
@@ -119,25 +120,24 @@ class ConvNd(Function):
         return self._thnn('grad_input', input, weight, grad_output)
 
     def _grad_params(self, input, weight, bias, grad_output):
-        if self.use_cudnn:
-            grad_weight = grad_bias = None
-            if self.needs_input_grad[1]:
-                grad_weight = weight.new().resize_as_(weight)
-                torch._C._cudnn_convolution_backward_filter(
-                    grad_output, input, grad_weight, self._cudnn_info,
-                    cudnn.benchmark)
+        if not self.use_cudnn:
+            return self._thnn('grad_params', input, weight, bias, grad_output)
+        grad_weight = grad_bias = None
+        if self.needs_input_grad[1]:
+            grad_weight = weight.new().resize_as_(weight)
+            torch._C._cudnn_convolution_backward_filter(
+                grad_output, input, grad_weight, self._cudnn_info,
+                cudnn.benchmark)
 
-            if bias is not None and self.needs_input_grad[2]:
-                grad_bias = bias.new().resize_as_(bias)
-                torch._C._cudnn_convolution_backward_bias(
-                    grad_output, grad_bias, self._cudnn_info)
+        if bias is not None and self.needs_input_grad[2]:
+            grad_bias = bias.new().resize_as_(bias)
+            torch._C._cudnn_convolution_backward_bias(
+                grad_output, grad_bias, self._cudnn_info)
 
-            return grad_weight, grad_bias
-
-        return self._thnn('grad_params', input, weight, bias, grad_output)
+        return grad_weight, grad_bias
 
     def thnn_class_name(self, input):
-        assert input.dim() == 4 or input.dim() == 5
+        assert input.dim() in [4, 5]
         if self.transposed:
             if input.dim() == 4:
                 return 'SpatialFullConvolution'
@@ -159,25 +159,24 @@ class ConvNd(Function):
         impl = _thnn_convs[self.thnn_class_name(input)]
         if self.groups == 1:
             return impl[fn_name](self, self._bufs[0], input, weight, *args)
-        else:
-            res = []
-            for g in range(self.groups):
-                def group(tensor, dim=None):
-                    if tensor is None:
-                        return None
-                    if dim is None:
-                        dim = 0 if tensor.dim() == 1 else 1
-                    n = tensor.size(dim) // self.groups
-                    return tensor.narrow(dim, n * g, n).contiguous()
+        res = []
+        for g in range(self.groups):
+            def group(tensor, dim=None):
+                if tensor is None:
+                    return None
+                if dim is None:
+                    dim = 0 if tensor.dim() == 1 else 1
+                n = tensor.size(dim) // self.groups
+                return tensor.narrow(dim, n * g, n).contiguous()
 
-                grouped_args = [group(input, 1), group(weight, 0)]
-                grouped_args += [group(t) for t in args]
-                res.append(impl[fn_name](self, self._bufs[g], *grouped_args))
-            if fn_name == 'grad_params':
-                return [torch.cat(t, 0) if t[0] is not None else None
-                        for t in zip(*res)]
-            else:
-                return torch.cat(res, 1)
+            grouped_args = [group(input, 1), group(weight, 0)]
+            grouped_args += [group(t) for t in args]
+            res.append(impl[fn_name](self, self._bufs[g], *grouped_args))
+        return (
+            [torch.cat(t, 0) if t[0] is not None else None for t in zip(*res)]
+            if fn_name == 'grad_params'
+            else torch.cat(res, 1)
+        )
 
 
 def _view4d(*tensors):
@@ -224,7 +223,7 @@ def parse_arguments(self, arguments, buffers, kernel_size):
         elif arg.name[0] == 'a':
             params.append(self.output_padding[idx[arg.name[-1]]])
         else:
-            raise RuntimeError('unexpected argument in THNN header: ' + arg)
+            raise RuntimeError(f'unexpected argument in THNN header: {arg}')
     return params
 
 
@@ -281,9 +280,9 @@ def _bind_functions():
     fns = function_by_name
     for name in classes:
         _thnn_convs[name] = {
-            'update_output': make_update_output(fns[name + '_updateOutput']),
-            'grad_input': make_grad_input(fns[name + '_updateGradInput']),
-            'grad_params': make_grad_params(fns[name + '_accGradParameters']),
+            'update_output': make_update_output(fns[f'{name}_updateOutput']),
+            'grad_input': make_grad_input(fns[f'{name}_updateGradInput']),
+            'grad_params': make_grad_params(fns[f'{name}_accGradParameters']),
         }
 
 

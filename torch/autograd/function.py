@@ -100,23 +100,25 @@ class FunctionMeta(type):
             metaclass).
     """
 
-    def __init__(cls, name, bases, attrs):
-        for super_cls in cls.mro():
+    def __init__(self, name, bases, attrs):
+        for super_cls in self.mro():
             forward = super_cls.__dict__.get('forward')
             if forward is not None:
-                has_static_forward = isinstance(forward, staticmethod) or isinstance(forward, classmethod)
+                has_static_forward = isinstance(forward, (staticmethod, classmethod))
                 break
 
-        setattr(cls, '_is_legacy', not has_static_forward)
+        setattr(self, '_is_legacy', not has_static_forward)
 
         # old-style functions
         if not has_static_forward:
-            return super(FunctionMeta, cls).__init__(name, bases, attrs)
+            return super(FunctionMeta, self).__init__(name, bases, attrs)
 
-        backward_fn = type(name + 'Backward', (BackwardCFunction,), {'_forward_cls': cls})
-        setattr(cls, '_backward_cls', backward_fn)
+        backward_fn = type(
+            f'{name}Backward', (BackwardCFunction,), {'_forward_cls': self}
+        )
+        setattr(self, '_backward_cls', backward_fn)
 
-        return super(FunctionMeta, cls).__init__(name, bases, attrs)
+        return super(FunctionMeta, self).__init__(name, bases, attrs)
 
 
 class Function(with_metaclass(FunctionMeta, _C._FunctionBase, _ContextMethodMixin, _HookMixin)):
@@ -245,11 +247,11 @@ def _iter_filter(condition):
             return
         elif isinstance(obj, (list, tuple)):
             for o in obj:
-                for var in _iter(o):
-                    yield var
+                yield from _iter(o)
         else:
             raise ValueError("NestedIOFunction doesn't know how to process "
                              "an input object of type " + torch.typename(obj))
+
     return _iter
 
 
@@ -280,8 +282,7 @@ class NestedIOFunction(Function):
         flat_input = tuple(_iter_variables(input))
         flat_output = super(NestedIOFunction, self)._do_forward(*flat_input)
         nested_output = self._nested_output
-        nested_variables = _unflatten(flat_output, self._nested_output)
-        return nested_variables
+        return _unflatten(flat_output, self._nested_output)
 
     def _do_backward(self, gradients, retain_variables):
         self.retain_variables = retain_variables

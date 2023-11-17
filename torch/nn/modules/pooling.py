@@ -65,12 +65,7 @@ class MaxPool1d(Module):
                             self.return_indices)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'size=' + str(self.kernel_size) \
-            + ', stride=' + str(self.stride) \
-            + ', padding=' + str(self.padding) \
-            + ', dilation=' + str(self.dilation) \
-            + ', ceil_mode=' + str(self.ceil_mode) + ')'
+        return f'{self.__class__.__name__} (size={str(self.kernel_size)}, stride={str(self.stride)}, padding={str(self.padding)}, dilation={str(self.dilation)}, ceil_mode={str(self.ceil_mode)})'
 
 
 class MaxPool2d(Module):
@@ -147,14 +142,17 @@ class MaxPool2d(Module):
         dh, dw = _pair(self.stride)
         padh, padw = _pair(self.padding)
         dilh, dilw = _pair(self.dilation)
-        padding_str = ', padding=(' + str(padh) + ', ' + str(padw) + ')' \
-            if padh != 0 and padw != 0 else ''
-        dilation_str = (', dilation=(' + str(dilh) + ', ' + str(dilw) + ')'
-                        if dilh != 0 and dilw != 0 else '')
-        return self.__class__.__name__ + ' (' \
-            + 'size=(' + str(kh) + ', ' + str(kw) + ')' \
-            + ', stride=(' + str(dh) + ', ' + str(dw) + ')' \
-            + padding_str + dilation_str + ')'
+        padding_str = (
+            f', padding=({str(padh)}, {str(padw)})'
+            if padh != 0 and padw != 0
+            else ''
+        )
+        dilation_str = (
+            f', dilation=({str(dilh)}, {str(dilw)})'
+            if dilh != 0 and dilw != 0
+            else ''
+        )
+        return f'{self.__class__.__name__} (size=({str(kh)}, {str(kw)}), stride=({str(dh)}, {str(dw)}){padding_str}{dilation_str})'
 
 
 class MaxUnpool1d(Module):
@@ -550,12 +548,7 @@ class MaxPool3d(Module):
                             self.return_indices)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'size=' + str(self.kernel_size) \
-            + ', stride=' + str(self.stride) \
-            + ', padding=' + str(self.padding) \
-            + ', dilation=' + str(self.dilation) \
-            + ', ceil_mode=' + str(self.ceil_mode) + ')'
+        return f'{self.__class__.__name__} (size={str(self.kernel_size)}, stride={str(self.stride)}, padding={str(self.padding)}, dilation={str(self.dilation)}, ceil_mode={str(self.ceil_mode)})'
 
 
 class AvgPool3d(Module):
@@ -749,8 +742,7 @@ class AdaptiveMaxPool1d(Module):
         return F.adaptive_max_pool1d(input, self.output_size, self.return_indices)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'output_size=' + str(self.output_size) + ')'
+        return f'{self.__class__.__name__} (output_size={str(self.output_size)})'
 
 
 class AdaptiveMaxPool2d(Module):
@@ -785,8 +777,7 @@ class AdaptiveMaxPool2d(Module):
         return F.adaptive_max_pool2d(input, self.output_size, self.return_indices)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'output_size=' + str(self.output_size) + ')'
+        return f'{self.__class__.__name__} (output_size={str(self.output_size)})'
 
 
 class AdaptiveAvgPool1d(Module):
@@ -814,8 +805,7 @@ class AdaptiveAvgPool1d(Module):
         return F.adaptive_avg_pool1d(input, self.output_size)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'output_size=' + str(self.output_size) + ')'
+        return f'{self.__class__.__name__} (output_size={str(self.output_size)})'
 
 
 class AdaptiveAvgPool2d(Module):
@@ -847,5 +837,4 @@ class AdaptiveAvgPool2d(Module):
         return F.adaptive_avg_pool2d(input, self.output_size)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'output_size=' + str(self.output_size) + ')'
+        return f'{self.__class__.__name__} (output_size={str(self.output_size)})'

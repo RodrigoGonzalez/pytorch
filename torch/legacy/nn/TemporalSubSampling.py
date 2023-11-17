@@ -20,11 +20,7 @@ class TemporalSubSampling(Module):
         self.reset()
 
     def reset(self, stdv=None):
-        if stdv is not None:
-            stdv = stdv * math.sqrt(3)
-        else:
-            stdv = 1. / math.sqrt(self.kW)
-
+        stdv = stdv * math.sqrt(3) if stdv is not None else 1. / math.sqrt(self.kW)
         self.weight.uniform_(-stdv, stdv)
         self.bias.uniform_(-stdv, stdv)
 

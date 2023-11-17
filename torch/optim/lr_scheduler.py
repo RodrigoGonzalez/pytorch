@@ -5,8 +5,7 @@ from .optimizer import Optimizer
 class _LRScheduler(object):
     def __init__(self, optimizer, last_epoch=-1):
         if not isinstance(optimizer, Optimizer):
-            raise TypeError('{} is not an Optimizer'.format(
-                type(optimizer).__name__))
+            raise TypeError(f'{type(optimizer).__name__} is not an Optimizer')
         self.optimizer = optimizer
         if last_epoch == -1:
             for group in optimizer.param_groups:
@@ -14,8 +13,9 @@ class _LRScheduler(object):
         else:
             for i, group in enumerate(optimizer.param_groups):
                 if 'initial_lr' not in group:
-                    raise KeyError("param 'initial_lr' is not specified "
-                                   "in param_groups[{}] when resuming an optimizer".format(i))
+                    raise KeyError(
+                        f"param 'initial_lr' is not specified in param_groups[{i}] when resuming an optimizer"
+                    )
         self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
         self.step(last_epoch + 1)
         self.last_epoch = last_epoch
@@ -54,13 +54,14 @@ class LambdaLR(_LRScheduler):
     """
     def __init__(self, optimizer, lr_lambda, last_epoch=-1):
         self.optimizer = optimizer
-        if not isinstance(lr_lambda, list) and not isinstance(lr_lambda, tuple):
-            self.lr_lambdas = [lr_lambda] * len(optimizer.param_groups)
-        else:
+        if isinstance(lr_lambda, (list, tuple)):
             if len(lr_lambda) != len(optimizer.param_groups):
-                raise ValueError("Expected {} lr_lambdas, but got {}".format(
-                    len(optimizer.param_groups), len(lr_lambda)))
+                raise ValueError(
+                    f"Expected {len(optimizer.param_groups)} lr_lambdas, but got {len(lr_lambda)}"
+                )
             self.lr_lambdas = list(lr_lambda)
+        else:
+            self.lr_lambdas = [lr_lambda] * len(optimizer.param_groups)
         self.last_epoch = last_epoch
         super(LambdaLR, self).__init__(optimizer, last_epoch)
 
@@ -129,7 +130,7 @@ class MultiStepLR(_LRScheduler):
     """
 
     def __init__(self, optimizer, milestones, gamma=0.1, last_epoch=-1):
-        if not list(milestones) == sorted(milestones):
+        if list(milestones) != sorted(milestones):
             raise ValueError('Milestones should be a list of'
                              ' increasing integers. Got {}', milestones)
         self.milestones = milestones
@@ -214,14 +215,14 @@ class ReduceLROnPlateau(object):
         self.factor = factor
 
         if not isinstance(optimizer, Optimizer):
-            raise TypeError('{} is not an Optimizer'.format(
-                type(optimizer).__name__))
+            raise TypeError(f'{type(optimizer).__name__} is not an Optimizer')
         self.optimizer = optimizer
 
-        if isinstance(min_lr, list) or isinstance(min_lr, tuple):
+        if isinstance(min_lr, (list, tuple)):
             if len(min_lr) != len(optimizer.param_groups):
-                raise ValueError("expected {} min_lrs, got {}".format(
-                    len(optimizer.param_groups), len(min_lr)))
+                raise ValueError(
+                    f"expected {len(optimizer.param_groups)} min_lrs, got {len(min_lr)}"
+                )
             self.min_lrs = list(min_lr)
         else:
             self.min_lrs = [min_lr] * len(optimizer.param_groups)
@@ -286,9 +287,9 @@ class ReduceLROnPlateau(object):
 
     def _init_is_better(self, mode, threshold, threshold_mode):
         if mode not in {'min', 'max'}:
-            raise ValueError('mode ' + mode + ' is unknown!')
+            raise ValueError(f'mode {mode} is unknown!')
         if threshold_mode not in {'rel', 'abs'}:
-            raise ValueError('threshold mode ' + mode + ' is unknown!')
+            raise ValueError(f'threshold mode {mode} is unknown!')
         if mode == 'min' and threshold_mode == 'rel':
             rel_epsilon = 1. - threshold
             self.is_better = lambda a, best: a < best * rel_epsilon

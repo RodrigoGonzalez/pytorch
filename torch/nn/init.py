@@ -40,10 +40,10 @@ def calculate_gain(nonlinearity, param=None):
             # True/False are instances of int, hence check above
             negative_slope = param
         else:
-            raise ValueError("negative_slope {} not a valid number".format(param))
+            raise ValueError(f"negative_slope {param} not a valid number")
         return math.sqrt(2.0 / (1 + negative_slope ** 2))
     else:
-        raise ValueError("Unsupported nonlinearity {}".format(nonlinearity))
+        raise ValueError(f"Unsupported nonlinearity {nonlinearity}")
 
 
 def uniform(tensor, a=0, b=1):
@@ -167,9 +167,7 @@ def _calculate_fan_in_and_fan_out(tensor):
     else:
         num_input_fmaps = tensor.size(1)
         num_output_fmaps = tensor.size(0)
-        receptive_field_size = 1
-        if tensor.dim() > 2:
-            receptive_field_size = tensor[0][0].numel()
+        receptive_field_size = tensor[0][0].numel() if tensor.dim() > 2 else 1
         fan_in = num_input_fmaps * receptive_field_size
         fan_out = num_output_fmaps * receptive_field_size
 
@@ -227,7 +225,7 @@ def _calculate_correct_fan(tensor, mode):
     mode = mode.lower()
     valid_modes = ['fan_in', 'fan_out']
     if mode not in valid_modes:
-        raise ValueError("Mode {} not supported, please use one of {}".format(mode, valid_modes))
+        raise ValueError(f"Mode {mode} not supported, please use one of {valid_modes}")
 
     fan_in, fan_out = _calculate_fan_in_and_fan_out(tensor)
     return fan_in if mode == 'fan_in' else fan_out

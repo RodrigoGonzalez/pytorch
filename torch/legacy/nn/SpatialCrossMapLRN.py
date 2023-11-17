@@ -46,7 +46,7 @@ class SpatialCrossMapLRN(Module):
             torch.pow(input, 2, out=inputSquare)
 
             prePad = int((self.size - 1) / 2 + 1)
-            prePadCrop = channels if prePad > channels else prePad
+            prePadCrop = min(prePad, channels)
 
             scaleFirst = self.scale.select(1, 0)
             scaleFirst.zero_()

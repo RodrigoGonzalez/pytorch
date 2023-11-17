@@ -183,8 +183,9 @@ class Threshold(Function):
     def forward(ctx, input, threshold, value, inplace):
         if inplace:
             if value > threshold:
-                raise RuntimeError('in-place processing requires value ({}) to not '
-                                   'exceed threshold ({})'.format(value, threshold))
+                raise RuntimeError(
+                    f'in-place processing requires value ({value}) to not exceed threshold ({threshold})'
+                )
         ctx.threshold = threshold
         ctx.value = value
         ctx.inplace = inplace

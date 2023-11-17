@@ -140,9 +140,9 @@ ${cpu}
 #endif
 """)
 
-    def _allocate(typename, tmpl, cuda_tmpl=None, sparse=False):
-        code = tmpl.safe_substitute(type=typename)
-        if typename == '':
+    def _allocate(self, tmpl, cuda_tmpl=None, sparse=False):
+        code = tmpl.safe_substitute(type=self)
+        if self == '':
             code = code.replace('NewEmpty', '(NewEmpty)')
         if cuda_tmpl:
             cuda_code = code.replace('THP', 'THCP')
@@ -230,22 +230,19 @@ ${cpu}
                     out_type += ', '.join(
                         self.TYPE_NAMES[arg['type']] for arg in output_args)
                     out_type += ']'
-                    option_desc += ['#' + out_type + ' out']
+                    option_desc += [f'#{out_type} out']
                 else:
                     arg = output_args[0]
                     option_desc += ['#' + self.TYPE_NAMES[arg['type']] + ' out']
 
-            if option_desc:
-                return '({})'.format(', '.join(option_desc))
-            else:
-                return 'no arguments'
+            return '({})'.format(', '.join(option_desc)) if option_desc else 'no arguments'
 
         for option in declaration['options']:
             arg_desc[format_args(option['arguments'], False)] = True
             arg_desc[format_args(option['arguments'], True)] = True
 
         arg_desc = sorted(list(arg_desc.keys()), key=len)
-        arg_desc = ['"' + desc + '"' for desc in arg_desc]
+        arg_desc = [f'"{desc}"' for desc in arg_desc]
         arg_str = ', '.join(arg_desc)
         variables_str = '\n'.join(declaration.get('variables', []))
         init_str = '\n'.join(declaration.get('init', []))
@@ -269,7 +266,7 @@ ${cpu}
             if option['output_count'] == 1:
                 return '__out'
             else:
-                return 'PyTuple_GET_ITEM(__out, {})'.format(arg['output_idx'])
+                return f"PyTuple_GET_ITEM(__out, {arg['output_idx']})"
 
     def process_docstrings(self):
         for declaration in self.declarations:
@@ -290,10 +287,7 @@ ${cpu}
         declaration.setdefault('init', [])
         declaration['init'] += [self.OUT_INIT]
         for option in declaration['options']:
-            out_idx = []
-            for i, arg in enumerate(option['arguments']):
-                if arg.get('output'):
-                    out_idx.append(i)
+            out_idx = [i for i, arg in enumerate(option['arguments']) if arg.get('output')]
             if not out_idx:
                 option['has_output'] = True
                 option['output_provided'] = False
@@ -390,8 +384,9 @@ ${cpu}
 
     def make_stateless(self, declaration):
         declaration = deepcopy(declaration)
-        declaration['name'] = 'TH{}PTensor_stateless_({})'.format(
-            'S' if declaration.get('sparse', False) else '', declaration['name'])
+        declaration[
+            'name'
+        ] = f"TH{'S' if declaration.get('sparse', False) else ''}PTensor_stateless_({declaration['name']})"
         for option in declaration['options']:
             for arg in option['arguments']:
                 if arg['name'] == 'self':
@@ -438,7 +433,7 @@ ${cpu}
                 )
 
     def preprocessor_guard(self, code, condition):
-        return '#if ' + condition + '\n' + code + '#endif\n'
+        return f'#if {condition}' + '\n' + code + '#endif\n'
 
     def process_wrapper(self, code, declaration):
         if 'defined_if' in declaration:
@@ -446,7 +441,7 @@ ${cpu}
         return code
 
     def process_all_call_arg(self, code, option):
-        return 'LIBRARY_STATE ' + code
+        return f'LIBRARY_STATE {code}'
 
     def process_all_checks(self, code, option):
         if option.get('has_output'):
@@ -455,8 +450,7 @@ ${cpu}
                 checks = "__out != NULL &&\n" + indent
                 if option['output_count'] > 1:
                     checks += "PyTuple_Check(__out) &&\n" + indent
-                    length_check = "PyTuple_GET_SIZE(__out) == {} &&\n".format(
-                        option['output_count'])
+                    length_check = f"PyTuple_GET_SIZE(__out) == {option['output_count']} &&\n"
                     checks += length_check + indent
                 code = checks + code
             else:
@@ -465,26 +459,29 @@ ${cpu}
         if any(arg.get('long_args', False) for arg in option['arguments']):
             code = code.replace('__argcount ==', '__argcount >=')
             expected = str(int(option.get('output_provided', False)))
-            code = '__dictcount == ' + expected + ' &&\n          ' + code
+            code = f'__dictcount == {expected}' + ' &&\n          ' + code
 
         return code
 
     def process_option_code(self, code, option):
         if option.get('defined_if', ''):
             defined_if = option['defined_if']
-            placeholder = ''
-            # This means that it's a first option, so we need a dummy if,
-            # so the next option can be an else if.
-            if 'else if' not in code:
-                placeholder = '\n    #else\n    if (false) {'
-            return '#if ' + defined_if + '\n          ' + code + placeholder + '\n    #endif\n'
+            placeholder = '\n    #else\n    if (false) {' if 'else if' not in code else ''
+            return (
+                f'#if {defined_if}'
+                + '\n          '
+                + code
+                + placeholder
+                + '\n    #endif\n'
+            )
         return code
 
     def process_pre_arg_assign(self, template, option):
-        new_args = []
-        for arg in option['arguments']:
-            if not option.get('output_provided', True) and arg.get('output'):
-                new_args.append(self.ALLOCATE_TYPE[arg['type']].substitute(name=arg['name']))
+        new_args = [
+            self.ALLOCATE_TYPE[arg['type']].substitute(name=arg['name'])
+            for arg in option['arguments']
+            if not option.get('output_provided', True) and arg.get('output')
+        ]
         template = new_args + template
         return template
 

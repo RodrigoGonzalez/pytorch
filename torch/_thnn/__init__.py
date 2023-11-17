@@ -54,14 +54,19 @@ _thcunn_headers = parse_header(THCUNN_H_PATH)
 for t in ['Float', 'Double']:
     backend = Backend(t, 'torch._thnn._THNN', _thnn_headers)
 
-    type2backend.backends['THNN{}Backend'.format(t)] = backend
-    type2backend.backends['torch.{}Tensor'.format(t)] = backend
-    type2backend.backends[getattr(torch, '{}Tensor'.format(t))] = backend
+    type2backend.backends[f'THNN{t}Backend'] = backend
+    type2backend.backends[f'torch.{t}Tensor'] = backend
+    type2backend.backends[getattr(torch, f'{t}Tensor')] = backend
 
 
 for t in ['Half', '', 'Double']:
-    backend = Backend('Cuda' + t, 'torch._thnn._THCUNN', _thcunn_headers, (THNNCudaBackendStateMixin,))
-    type2backend.backends['THNNCuda{}Backend'.format(t)] = backend
+    backend = Backend(
+        f'Cuda{t}',
+        'torch._thnn._THCUNN',
+        _thcunn_headers,
+        (THNNCudaBackendStateMixin,),
+    )
+    type2backend.backends[f'THNNCuda{t}Backend'] = backend
     py_name = 'Float' if t == '' else t
-    type2backend.backends['torch.cuda.{}Tensor'.format(py_name)] = backend
-    type2backend.backends[getattr(torch.cuda, '{}Tensor'.format(py_name))] = backend
+    type2backend.backends[f'torch.cuda.{py_name}Tensor'] = backend
+    type2backend.backends[getattr(torch.cuda, f'{py_name}Tensor')] = backend

@@ -75,7 +75,7 @@ TYPE_TRANSFORMS = {
         'accreal': 'double',
     },
 }
-for t, transforms in TYPE_TRANSFORMS.items():
+for transforms in TYPE_TRANSFORMS.values():
     transforms.update(COMMON_TRANSFORMS)
 
 for t in ['Float', 'Double']:
@@ -85,22 +85,39 @@ for t in ['CudaHalf', 'Cuda', 'CudaDouble']:
 
 
 def wrap_function(name, type, arguments):
-    cname = 'THNN_' + type + name
+    cname = f'THNN_{type}{name}'
     declaration = ''
-    declaration += 'extern "C" void ' + cname + \
-        '(' + ', '.join(TYPE_TRANSFORMS[type].get(arg.type, arg.type) for arg in arguments) + ');\n'
+    declaration += (
+        f'extern "C" void {cname}('
+        + ', '.join(
+            TYPE_TRANSFORMS[type].get(arg.type, arg.type) for arg in arguments
+        )
+    ) + ');\n'
     declaration += FUNCTION_TEMPLATE.substitute(name=type + name, cname=cname)
     indent = ' ' * 4
     dict_indent = ' ' * 6
-    prefix = indent + '- '
+    prefix = f'{indent}- '
     for arg in arguments:
         if not arg.is_optional:
             declaration += prefix + TYPE_TRANSFORMS[type].get(arg.type, arg.type) + ' ' + arg.name + '\n'
         else:
             t = TYPE_TRANSFORMS[type].get(arg.type, arg.type)
-            declaration += prefix + 'type: ' + t + '\n' + \
-                dict_indent + 'name: ' + arg.name + '\n' + \
-                dict_indent + 'nullable: True' + '\n'
+            declaration += (
+                (
+                    (
+                        (
+                            (
+                                (f'{prefix}type: {t}' + '\n' + dict_indent)
+                                + 'name: '
+                            )
+                            + arg.name
+                        )
+                        + '\n'
+                    )
+                    + dict_indent
+                )
+                + 'nullable: True'
+            ) + '\n'
     declaration += ']]\n\n\n'
     return declaration
 
@@ -126,8 +143,7 @@ def wrap_nn():
 
 
 def wrap_cunn():
-    wrapper = '#include <TH/TH.h>\n'
-    wrapper += '#include <THC/THC.h>\n\n\n'
+    wrapper = '#include <TH/TH.h>\n' + '#include <THC/THC.h>\n\n\n'
     cunn_functions = thnn_utils.parse_header(thnn_utils.THCUNN_H_PATH)
     for fn in cunn_functions:
         for t in ['CudaHalf', 'Cuda', 'CudaDouble']:
@@ -152,11 +168,11 @@ def wrap_generic_function(name, backends):
     declaration = ''
     declaration += GENERIC_FUNCTION_TEMPLATE.substitute(name=name)
     for backend in backends:
-        declaration += '    - cname: ' + name + '\n'
+        declaration += f'    - cname: {name}' + '\n'
         declaration += '      backend: ' + backend['name'] + '\n'
         declaration += '      arguments:\n'
         for arg in backend['arguments']:
-            declaration += '       - arg: ' + arg.type + ' ' + arg.name + '\n'
+            declaration += f'       - arg: {arg.type} {arg.name}' + '\n'
             if arg.is_optional:
                 declaration += '         optional: True\n'
     declaration += ']]\n\n\n'

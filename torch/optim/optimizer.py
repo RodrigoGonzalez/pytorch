@@ -26,7 +26,7 @@ class Optimizer(object):
 
         self.state = defaultdict(dict)
         self.param_groups = list(params)
-        if len(self.param_groups) == 0:
+        if not self.param_groups:
             raise ValueError("optimizer got an empty parameter list")
         if not isinstance(self.param_groups[0], dict):
             self.param_groups = [{'params': self.param_groups}]
@@ -46,9 +46,15 @@ class Optimizer(object):
         for name, default in defaults.items():
             for i, group in enumerate(self.param_groups):
                 if default is required and name not in group:
-                    raise ValueError("parameter group " + str(i) + " didn't "
-                                     "specify a value of required optimization parameter " +
-                                     name)
+                    raise ValueError(
+                        (
+                            (
+                                f"parameter group {str(i)}" + " didn't "
+                                "specify a value of required optimization parameter "
+                            )
+                            + name
+                        )
+                    )
                 else:
                     group.setdefault(name, default)
 
@@ -118,15 +124,19 @@ class Optimizer(object):
                              "that doesn't match the size of optimizer's group")
 
         # Update the state
-        id_map = {old_id: p for old_id, p in
-                  zip(chain(*(g['params'] for g in saved_groups)),
-                      chain(*(g['params'] for g in groups)))}
+        id_map = dict(
+            zip(
+                chain(*(g['params'] for g in saved_groups)),
+                chain(*(g['params'] for g in groups)),
+            )
+        )
         state = {id_map.get(k, k): v for k, v in state_dict['state'].items()}
 
         # Update parameter groups, setting their 'params' value
         def update_group(group, new_group):
             new_group['params'] = group['params']
             return new_group
+
         param_groups = [
             update_group(g, ng) for g, ng in zip(groups, saved_groups)]
         self.__setstate__({'state': state, 'param_groups': param_groups})

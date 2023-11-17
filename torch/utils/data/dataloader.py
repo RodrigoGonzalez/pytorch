@@ -86,7 +86,7 @@ def default_collate(batch):
         if _use_shared_memory:
             # If we're in a background process, concatenate directly into a
             # shared memory tensor to avoid an extra copy
-            numel = sum([x.numel() for x in batch])
+            numel = sum(x.numel() for x in batch)
             storage = batch[0].storage()._new_shared(numel)
             out = batch[0].new(storage)
         return torch.stack(batch, 0, out=out)
@@ -109,8 +109,9 @@ def default_collate(batch):
         transposed = zip(*batch)
         return [default_collate(samples) for samples in transposed]
 
-    raise TypeError(("batch must contain tensors, numbers, dicts or lists; found {}"
-                     .format(type(batch[0]))))
+    raise TypeError(
+        f"batch must contain tensors, numbers, dicts or lists; found {type(batch[0])}"
+    )
 
 
 def pin_memory_batch(batch):
@@ -296,7 +297,7 @@ class DataLoader(object):
             self.sampler = sampler
         elif shuffle:
             self.sampler = RandomSampler(dataset)
-        elif not shuffle:
+        else:
             self.sampler = SequentialSampler(dataset)
 
     def __iter__(self):

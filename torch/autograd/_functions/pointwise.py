@@ -425,11 +425,10 @@ class Addcdiv(InplaceFunction):
     def forward(ctx, add_tensor, div_tensor1, div_tensor2, scale=1.0, inplace=False):
         ctx._scale = scale
         ctx.save_for_backward(div_tensor1, div_tensor2)
-        if inplace:
-            ctx.mark_dirty(add_tensor)
-            return add_tensor.addcdiv_(ctx._scale, div_tensor1, div_tensor2)
-        else:
+        if not inplace:
             return add_tensor.addcdiv(ctx._scale, div_tensor1, div_tensor2)
+        ctx.mark_dirty(add_tensor)
+        return add_tensor.addcdiv_(ctx._scale, div_tensor1, div_tensor2)
 
     @staticmethod
     def backward(ctx, grad_output):

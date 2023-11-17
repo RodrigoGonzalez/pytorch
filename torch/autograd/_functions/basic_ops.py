@@ -117,17 +117,15 @@ class SubConstant(InplaceFunction):
     def forward(ctx, a, b, inplace=False):
         tensor, constant, ctx.tensor_first = sort_args(a, b)
         if ctx.tensor_first:
-            if inplace:
-                ctx.mark_dirty(tensor)
-                return tensor.sub_(constant)
-            else:
+            if not inplace:
                 return tensor.sub(constant)
+            ctx.mark_dirty(tensor)
+            return tensor.sub_(constant)
+        elif inplace:
+            ctx.mark_dirty(tensor)
+            return tensor.neg_().add_(constant)
         else:
-            if inplace:
-                ctx.mark_dirty(tensor)
-                return tensor.neg_().add_(constant)
-            else:
-                return tensor.neg().add_(constant)
+            return tensor.neg().add_(constant)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -142,11 +140,10 @@ class MulConstant(InplaceFunction):
     @staticmethod
     def forward(ctx, a, b, inplace=False):
         tensor, ctx.constant, ctx.tensor_first = sort_args(a, b)
-        if inplace:
-            ctx.mark_dirty(tensor)
-            return tensor.mul_(ctx.constant)
-        else:
+        if not inplace:
             return tensor.mul(ctx.constant)
+        ctx.mark_dirty(tensor)
+        return tensor.mul_(ctx.constant)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -164,30 +161,26 @@ class DivConstant(InplaceFunction):
         tensor, ctx.constant, ctx.tensor_first = sort_args(a, b)
         ctx.inplace = inplace
         if ctx.tensor_first:
-            if inplace:
-                ctx.mark_dirty(tensor)
-                return tensor.div_(ctx.constant)
-            else:
+            if not inplace:
                 return tensor.div(ctx.constant)
+            ctx.mark_dirty(tensor)
+            return tensor.div_(ctx.constant)
         else:
             ctx.save_for_backward(tensor)
-            if inplace:
-                ctx.mark_dirty(tensor)
-                return tensor.reciprocal_().mul_(ctx.constant)
-            else:
+            if not inplace:
                 return tensor.reciprocal().mul_(ctx.constant)
+            ctx.mark_dirty(tensor)
+            return tensor.reciprocal_().mul_(ctx.constant)
 
     @staticmethod
     def backward(ctx, grad_output):
         if ctx.tensor_first:
             return grad_output.div(ctx.constant), None, None
-        else:
-            v, = ctx.saved_variables
-            if ctx.inplace:
-                return None, grad_output.mul(v).mul(v).div_(-ctx.constant), None
-            else:
-                v_rep = v.reciprocal()
-                return None, grad_output.mul(v_rep).mul(v_rep).mul_(-ctx.constant), None
+        v, = ctx.saved_variables
+        if ctx.inplace:
+            return None, grad_output.mul(v).mul(v).div_(-ctx.constant), None
+        v_rep = v.reciprocal()
+        return None, grad_output.mul(v_rep).mul(v_rep).mul_(-ctx.constant), None
 
 
 class PowConstant(Function):

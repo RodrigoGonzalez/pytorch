@@ -60,7 +60,7 @@ if rank == 0:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.broadcast(tensor, 0)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -69,7 +69,7 @@ else:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.broadcast(tensor, 0)
 dist.barrier()
 
@@ -79,7 +79,7 @@ if rank == 0:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.send(tensor, 1)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -88,7 +88,7 @@ elif rank == 1:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.recv(tensor, 0)
 dist.barrier()
 
@@ -98,7 +98,7 @@ if rank == 0:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.reduce(tensor, 0)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -107,7 +107,7 @@ else:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.reduce(tensor, 0)
 dist.barrier()
 
@@ -117,7 +117,7 @@ if rank == 0:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.all_reduce(tensor)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -126,7 +126,7 @@ else:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.all_reduce(tensor)
 dist.barrier()
 
@@ -134,10 +134,10 @@ if rank == 0:
     print_header("scatter")
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
-        tensors = [tensor for n in range(0, dist.get_world_size())]
+        tensors = [tensor for _ in range(0, dist.get_world_size())]
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.scatter_send(tensors, tensor)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -146,7 +146,7 @@ else:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.scatter_recv(tensor, 0)
 dist.barrier()
 
@@ -154,10 +154,10 @@ if rank == 0:
     print_header("gather")
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
-        tensors = [tensor for n in range(0, dist.get_world_size())]
+        tensors = [tensor for _ in range(0, dist.get_world_size())]
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.gather_recv(tensors, tensor)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -166,7 +166,7 @@ else:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.gather_send(tensor, 0)
 dist.barrier()
 
@@ -174,10 +174,10 @@ if rank == 0:
     print_header("all gather")
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
-        tensors = [tensor for n in range(0, dist.get_world_size())]
+        tensors = [tensor for _ in range(0, dist.get_world_size())]
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
             start = timer()
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.all_gather(tensors, tensor)
             end = timer()
             print_stats(bytes, num_tensors, end - start)
@@ -185,8 +185,8 @@ if rank == 0:
 else:
     for bytes in [2**n for n in range(MIN_BYTES, MAX_BYTES)]:
         tensor = torch.ByteTensor(bytes).fill_(42)
-        tensors = [tensor for n in range(0, dist.get_world_size())]
+        tensors = [tensor for _ in range(0, dist.get_world_size())]
         for num_tensors in [10**n for n in range(MIN_NUM_TENSORS, MAX_NUM_TENSORS)]:
-            for i in range(0, num_tensors):
+            for _ in range(0, num_tensors):
                 dist.all_gather(tensors, tensor)
 dist.barrier()

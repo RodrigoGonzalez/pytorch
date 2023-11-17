@@ -49,9 +49,8 @@ class Add(Module):
     def accGradParameters(self, input, gradOutput, scale=1):
         if self.gradBias.size(0) == 1:
             self.gradBias[0] = self.gradBias[0] + scale * gradOutput.sum()
+        elif input.is_same_size(self.bias):
+            self.gradBias.add_(scale, gradOutput)
         else:
-            if input.is_same_size(self.bias):
-                self.gradBias.add_(scale, gradOutput)
-            else:
-                gradOutput = gradOutput.contiguous().view(input.size(0), -1)
-                self.gradBias.view(-1).addmv_(scale, gradOutput.t(), self._ones)
+            gradOutput = gradOutput.contiguous().view(input.size(0), -1)
+            self.gradBias.view(-1).addmv_(scale, gradOutput.t(), self._ones)

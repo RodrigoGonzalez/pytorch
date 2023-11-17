@@ -102,11 +102,10 @@ class ConcatTable(Container):
         for i in range(len(self.modules)):
             if i == len(self.modules) - 1:
                 res = res + line + tab + next + '(' + str(i) + '): ' + \
-                    str(self.modules[i]).replace(line, line + tab + extlast)
+                        str(self.modules[i]).replace(line, line + tab + extlast)
             else:
                 res = res + line + tab + next + '(' + str(i) + '): ' + \
-                    str(self.modules[i]).replace(line, line + tab + ext)
+                        str(self.modules[i]).replace(line, line + tab + ext)
 
         res = res + line + tab + last + 'output'
-        res = res + line + '}'
-        return res
+        return res + line + '}'

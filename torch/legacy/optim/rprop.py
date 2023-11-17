@@ -37,7 +37,7 @@ def rprop(opfunc, x, config, state=None):
 
     hfx = []
 
-    for i in range(niter):
+    for _ in range(niter):
         # (1) evaluate f(x) and df/dx
         fx, dfdx = opfunc(x)
 
@@ -51,7 +51,7 @@ def rprop(opfunc, x, config, state=None):
             state['nsign'] = torch.ByteTensor(dfdx.size())
             state['zsign'] = torch.ByteTensor(dfdx.size())
             state['dminmax'] = torch.ByteTensor(dfdx.size())
-            if str(type(x)).find('Cuda') > -1:
+            if 'Cuda' in str(type(x)):
                 # Push to GPU
                 state['psign'] = state['psign'].cuda()
                 state['nsign'] = state['nsign'].cuda()

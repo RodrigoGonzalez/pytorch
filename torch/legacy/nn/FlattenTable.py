@@ -13,10 +13,7 @@ class FlattenTable(Module):
 
     def _flatten(self, output, input):
         if isinstance(input, list):
-            input_map = []
-            # forward DFS order
-            for i in range(len(input)):
-                input_map.append(self._flatten(output, input[i]))
+            input_map = [self._flatten(output, input[i]) for i in range(len(input))]
         else:
             input_map = len(output)
             output.append(input)
@@ -24,28 +21,24 @@ class FlattenTable(Module):
         return input_map
 
     def _checkMapping(self, output, input, input_map):
-        if isinstance(input, list):
-            if len(input) != len(input_map):
-                return False
-
-            # forward DFS order
-            for i in range(len(input)):
-                if not self._checkMapping(output, input[i], input_map[i]):
-                    return False
-
-            return True
-        else:
+        if not isinstance(input, list):
             return output[input_map] is input
+        if len(input) != len(input_map):
+            return False
+
+        return all(
+            self._checkMapping(output, input[i], input_map[i])
+            for i in range(len(input))
+        )
 
     # During BPROP we have to build a gradInput with the same shape as the
     # input.  This is a recursive function to build up a gradInput
     def _inverseFlatten(self, gradOutput, input_map):
         if isinstance(input_map, list):
-            gradInput = []
-            for i in range(len(input_map)):
-                gradInput.append(self._inverseFlatten(gradOutput, input_map[i]))
-
-            return gradInput
+            return [
+                self._inverseFlatten(gradOutput, input_map[i])
+                for i in range(len(input_map))
+            ]
         else:
             return gradOutput[input_map]
 

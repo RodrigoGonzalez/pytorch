@@ -4,9 +4,8 @@ from itertools import repeat
 
 def _ntuple(n):
     def parse(x):
-        if isinstance(x, collections.Iterable):
-            return x
-        return tuple(repeat(x, n))
+        return x if isinstance(x, collections.Iterable) else tuple(repeat(x, n))
+
     return parse
 
 _single = _ntuple(1)

@@ -26,12 +26,12 @@ def _generate_typedefs():
             for kind in ['Tensor', 'Storage']:
                 python_name = t + kind
                 if t == 'Float' and lib == 'THCuda':
-                    th_name = 'THCuda' + kind
+                    th_name = f'THCuda{kind}'
                 else:
                     th_name = lib + t + kind
-                th_struct = 'struct ' + th_name
+                th_struct = f'struct {th_name}'
 
-                typedefs += ['typedef {} {};'.format(th_struct, th_name)]
+                typedefs += [f'typedef {th_struct} {th_name};']
                 module = torch if lib == 'TH' else torch.cuda
                 python_class = getattr(module, python_name)
                 _cffi_to_torch[th_struct] = python_class
@@ -78,10 +78,7 @@ def _setup_wrapper(with_cuda):
 
 def _create_module_dir(base_path, fullname):
     module, _, name = fullname.rpartition('.')
-    if not module:
-        target_dir = name
-    else:
-        target_dir = reduce(os.path.join, fullname.split('.'))
+    target_dir = name if not module else reduce(os.path.join, fullname.split('.'))
     target_dir = os.path.join(base_path, target_dir)
     try:
         os.makedirs(target_dir)
@@ -96,7 +93,7 @@ def _create_module_dir(base_path, fullname):
 def _build_extension(ffi, cffi_wrapper_name, target_dir, verbose):
     try:
         tmpdir = tempfile.mkdtemp()
-        libname = cffi_wrapper_name + '.so'
+        libname = f'{cffi_wrapper_name}.so'
         ffi.compile(tmpdir=tmpdir, verbose=verbose, target=libname)
         shutil.copy(os.path.join(tmpdir, libname),
                     os.path.join(target_dir, libname))
@@ -136,7 +133,7 @@ def create_extension(name, headers, sources, verbose=True, with_cuda=False,
     base_path = os.path.abspath(os.path.dirname(relative_to))
     name_suffix, target_dir = _create_module_dir(base_path, name)
     if not package:
-        cffi_wrapper_name = '_' + name_suffix
+        cffi_wrapper_name = f'_{name_suffix}'
     else:
         cffi_wrapper_name = (name.rpartition('.')[0] +
                              '.{0}._{0}'.format(name_suffix))
@@ -158,10 +155,11 @@ def create_extension(name, headers, sources, verbose=True, with_cuda=False,
                    include_dirs=include_dirs, **kwargs)
     ffi.cdef(_typedefs + all_headers_source)
 
-    _make_python_wrapper(name_suffix, '_' + name_suffix, target_dir)
+    _make_python_wrapper(name_suffix, f'_{name_suffix}', target_dir)
 
     def build():
         _build_extension(ffi, cffi_wrapper_name, target_dir, verbose)
+
     ffi.build = build
     return ffi
 

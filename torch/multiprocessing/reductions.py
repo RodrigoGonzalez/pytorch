@@ -58,9 +58,7 @@ def fd_id(fd):
 
 def storage_from_cache(cls, key):
     storage_ref = shared_cache.get(key)
-    if storage_ref is None:
-        return None
-    return cls._new_with_weak_ptr(storage_ref)
+    return None if storage_ref is None else cls._new_with_weak_ptr(storage_ref)
 
 
 def rebuild_storage_fd(cls, df, size):

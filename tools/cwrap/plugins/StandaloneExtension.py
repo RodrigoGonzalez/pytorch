@@ -118,9 +118,10 @@ PyObject * $name(PyObject *_unused, PyObject *args)
         return code
 
     def declare_module_methods(self):
-        module_methods = ''
-        for declaration in self.declarations:
-            module_methods += REGISTER_METHOD_TEMPLATE.substitute(name=declaration['name'])
+        module_methods = ''.join(
+            REGISTER_METHOD_TEMPLATE.substitute(name=declaration['name'])
+            for declaration in self.declarations
+        )
         return MODULE_METHODS_TEMPLATE.substitute(METHODS=module_methods)
 
     def get_type_unpack(self, arg, option):
@@ -134,9 +135,8 @@ PyObject * $name(PyObject *_unused, PyObject *args)
 
         def describe_arg(arg):
             desc = self.TYPE_NAMES[arg['type']] + ' ' + arg['name']
-            if arg.get('nullable'):
-                return '[{} or None]'.format(desc)
-            return desc
+            return '[{} or None]'.format(desc) if arg.get('nullable') else desc
+
         for option in declaration['options']:
             option_desc = [describe_arg(arg)
                            for arg in option['arguments']
@@ -146,6 +146,6 @@ PyObject * $name(PyObject *_unused, PyObject *args)
             else:
                 arg_desc.append('no arguments')
         arg_desc.sort(key=len)
-        arg_desc = ['"' + desc + '"' for desc in arg_desc]
+        arg_desc = [f'"{desc}"' for desc in arg_desc]
         arg_str = ', '.join(arg_desc)
         return Template(self.WRAPPER_TEMPLATE.safe_substitute(expected_args=arg_str))

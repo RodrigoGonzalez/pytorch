@@ -14,7 +14,7 @@ def get_cudnn_mode(mode):
     elif mode == 'GRU':
         return cudnn.CUDNN_GRU
     else:
-        raise Exception("Unknown mode: {}".format(mode))
+        raise Exception(f"Unknown mode: {mode}")
 
 
 class Unserializable(object):
@@ -35,7 +35,7 @@ class Unserializable(object):
 
 
 def init_rnn_descriptor(fn, handle):
-    dropout_desc_name = 'desc_' + str(torch.cuda.current_device())
+    dropout_desc_name = f'desc_{str(torch.cuda.current_device())}'
     dropout_p = fn.dropout if fn.train else 0
     if (dropout_desc_name not in fn.dropout_state) or (fn.dropout_state[dropout_desc_name].get() is None):
         fn.dropout_state[dropout_desc_name] = Unserializable(
@@ -119,6 +119,7 @@ def get_parameters(fn, handle, weight_buf):
     params = []
     num_linear_layers = _num_linear_layers(fn)
     num_layers = fn.num_directions * fn.num_layers
+    min_dim = 3
     for layer in range(num_layers):
         layer_params = []
         for cudnn_method in cudnn_methods:
@@ -139,7 +140,6 @@ def get_parameters(fn, handle, weight_buf):
                 data_type = ctypes.c_int()
                 format = ctypes.c_int()
                 nb_dims = ctypes.c_int()
-                min_dim = 3
                 filter_dim_a = torch.IntTensor(min_dim)
                 check_error(cudnn.lib.cudnnGetFilterNdDescriptor(
                     lin_layer_mat_desc,
@@ -161,7 +161,7 @@ def get_parameters(fn, handle, weight_buf):
                 # (same for the hh weights, and the ih and hh biases).
                 # Since we're storing all the weights in a single tensor anyway,
                 # might as well merge the CUDNN ones into a single tensor as well
-                if linear_id == 0 or linear_id == num_linear_layers / 2:
+                if linear_id in [0, num_linear_layers / 2]:
                     assert filter_dim_a.prod() == filter_dim_a[0]
                     size = (filter_dim_a[0] * num_linear_layers // 2, filter_dim_a[2])
                     param = fn.weight_buf.new().set_(
@@ -201,12 +201,11 @@ def forward(fn, input, hx, weight, output, hy):
             input = input.transpose(0, 1)
 
         if (not is_input_packed and input.dim() != 3) or (is_input_packed and input.dim() != 2):
-            raise RuntimeError(
-                'input must have 3 dimensions, got {}'.format(input.dim()))
+            raise RuntimeError(f'input must have 3 dimensions, got {input.dim()}')
         if fn.input_size != input.size(-1):
-            raise RuntimeError('input.size(-1) must be equal to input_size. Expected {}, got {}'.format(
-                fn.input_size, input.size(-1)
-            ))
+            raise RuntimeError(
+                f'input.size(-1) must be equal to input_size. Expected {fn.input_size}, got {input.size(-1)}'
+            )
         if fn.dropout != 0 and cudnn.version() < 5103:
             raise RuntimeError('dropout supported only in cudnn v5.1 and above')
 
@@ -255,11 +254,11 @@ def forward(fn, input, hx, weight, output, hy):
         _copyParams(weight, params)
 
         if tuple(hx.size()) != hidden_size:
-            raise RuntimeError('Expected hidden size {}, got {}'.format(
-                hidden_size, tuple(hx.size())))
+            raise RuntimeError(
+                f'Expected hidden size {hidden_size}, got {tuple(hx.size())}'
+            )
         if cx is not None and tuple(cx.size()) != hidden_size:
-            raise RuntimeError('Expected cell size {}, got {}'.format(
-                hidden_size, tuple(cx.size())))
+            raise RuntimeError(f'Expected cell size {hidden_size}, got {tuple(cx.size())}')
 
         workspace_size = ctypes.c_long()
         check_error(lib.cudnnGetRNNWorkspaceSize(
@@ -352,23 +351,19 @@ def backward_grad(fn, input, hx, weight, output, grad_output, grad_hy, grad_inpu
         if not fn.requires_grad:
             raise RuntimeError('backward_grad can only be called when the function requires grad!')
         if tuple(input.size()) != input_size:
-            raise RuntimeError('Expected input size {}, got {}'.format(
-                input_size, tuple(input.size())))
+            raise RuntimeError(
+                f'Expected input size {input_size}, got {tuple(input.size())}'
+            )
         if tuple(output.size()) != output_size:
-            raise RuntimeError('Expected output size {}, got {}'.format(
-                output_size, output.size()))
+            raise RuntimeError(f'Expected output size {output_size}, got {output.size()}')
         if hx is not None and tuple(hx.size()) != hidden_size:
-            raise RuntimeError('Expected hidden size {}, got {}'.format(
-                hidden_size, hx.size()))
+            raise RuntimeError(f'Expected hidden size {hidden_size}, got {hx.size()}')
         if cx is not None and tuple(cx.size()) != hidden_size:
-            raise RuntimeError('Expected cell size {}, got {}'.format(
-                hidden_size, cx.size()))
+            raise RuntimeError(f'Expected cell size {hidden_size}, got {cx.size()}')
         if dhy is not None and tuple(dhy.size()) != hidden_size:
-            raise RuntimeError('Expected d_hidden size {}, got {}'.format(
-                hidden_size, dhy.size()))
+            raise RuntimeError(f'Expected d_hidden size {hidden_size}, got {dhy.size()}')
         if dcy is not None and tuple(dcy.size()) != hidden_size:
-            raise RuntimeError('Expected d_cell size {}, got {}'.format(
-                hidden_size, dcy.size()))
+            raise RuntimeError(f'Expected d_cell size {hidden_size}, got {dcy.size()}')
         if not dhy.is_cuda or not dy.is_cuda or (dcy is not None and not dcy.is_cuda):
             raise RuntimeError('Gradients aren\'t CUDA tensors')
 
@@ -399,12 +394,10 @@ def _num_linear_layers(fn):
         return 8
     elif fn.mode == cudnn.CUDNN_GRU:
         return 6
-    elif fn.mode == cudnn.CUDNN_RNN_RELU:
-        return 2
-    elif fn.mode == cudnn.CUDNN_RNN_TANH:
+    elif fn.mode in [cudnn.CUDNN_RNN_RELU, cudnn.CUDNN_RNN_TANH]:
         return 2
     else:
-        raise RuntimeError('Unknown mode: {}'.format(fn.mode))
+        raise RuntimeError(f'Unknown mode: {fn.mode}')
 
 
 def backward_weight(fn, input, hx, output, weight, grad_weight):
@@ -427,11 +420,11 @@ def backward_weight(fn, input, hx, output, weight, grad_weight):
         if fn.dropout != 0 and cudnn.version() < 5103:
             raise RuntimeError('dropout supported only in cudnn v 5.1 and above')
         if tuple(input.size()) != input_size:
-            raise RuntimeError('Expected input size {}, got {}'.format(
-                input_size, tuple(input.size())))
+            raise RuntimeError(
+                f'Expected input size {input_size}, got {tuple(input.size())}'
+            )
         if tuple(hx.size()) != hidden_size:
-            raise RuntimeError('Expected input size {}, got {}'.format(
-                hidden_size, hx.size()))
+            raise RuntimeError(f'Expected input size {hidden_size}, got {hx.size()}')
 
         assert hx.is_contiguous()
         assert cx is None or cx.is_contiguous()

@@ -13,7 +13,7 @@ class MM(Module):
     def updateOutput(self, input):
         assert len(input) == 2
         a, b = input
-        assert a.ndimension() == 2 or a.ndimension() == 3
+        assert a.ndimension() in [2, 3]
         assert a.dim() == b.dim()
 
         if a.ndimension() == 2:
@@ -45,7 +45,7 @@ class MM(Module):
         self.gradInput[0].resize_as_(a)
         self.gradInput[1].resize_as_(b)
 
-        assert gradOutput.ndimension() == 2 or gradOutput.ndimension() == 3
+        assert gradOutput.ndimension() in [2, 3]
         assert a.dim() == b.dim() == gradOutput.dim()
 
         if gradOutput.ndimension() == 2:

@@ -53,8 +53,8 @@ class Broadcast(CWrapPlugin):
             ret = """THTensor *${arg_op_other}_save = ${arg_op_other};
                      THTensorPtr ${arg_op_other}_guard(THTensor_(new)(LIBRARY_STATE_NOARGS));\n"""
         else:
-            cpu_t = "TH" + type + "Tensor"
-            gpu_t = "THCuda" + type + "Tensor"
+            cpu_t = f"TH{type}Tensor"
+            gpu_t = f"THCuda{type}Tensor"
             ret = ("#if !IS_CUDA\n" +
                    cpu_t + " *${arg_op_other}_save = ${arg_op_other};\n" +
                    cpu_t + "Ptr ${arg_op_other}_guard(" + cpu_t + "_new(LIBRARY_STATE_NOARGS));\n" +
@@ -168,15 +168,15 @@ class Broadcast(CWrapPlugin):
                 raise ValueError('Broadcast only supports up to 2 secondary parameters')
             op_b = param_others[0]
             op_c = param_others[1] if len(param_others) == 2 else None
-            arg_op_b = "arg_" + op_b
-            arg_op_a = "arg_" + op_a
-            arg_op_c = ("arg_" + op_c) if op_c else None
+            arg_op_b = f"arg_{op_b}"
+            arg_op_a = f"arg_{op_a}"
+            arg_op_c = f"arg_{op_c}" if op_c else None
 
             dims_kvs = []
             for p in params:
                 if p.startswith("dims:"):
                     assert(raise_errors == "true")
-                    if len(dims_kvs) != 0:
+                    if dims_kvs:
                         raise ValueError("multiple specifications of dims")
                     dims = p[len("dims:"):].split(",")
                     for dim in dims:
@@ -184,12 +184,18 @@ class Broadcast(CWrapPlugin):
                         assert len(batchdim) == 2
                         assert batchdim[1].startswith("dim")
                         dim_val = batchdim[1][len("dim"):]
-                        dims_kvs.append({"op": batchdim[0], "arg_op": "arg_" + batchdim[0], "val": dim_val})
+                        dims_kvs.append(
+                            {
+                                "op": batchdim[0],
+                                "arg_op": f"arg_{batchdim[0]}",
+                                "val": dim_val,
+                            }
+                        )
 
             assert len(dims_kvs) <= 3
             for p in params[1:]:
                 if p != "inplace" and p != "fallback" and not p.startswith("dims:") and not p.startswith("types:"):
-                    raise ValueError("invalid parameter {}".format(p))
+                    raise ValueError(f"invalid parameter {p}")
 
             type_op_b = None
             type_op_c = None
@@ -239,28 +245,48 @@ class Broadcast(CWrapPlugin):
                     code_arg_op_other2=code_arg_op_other2,
                     expand_code=expand_code,
                     raise_errors=raise_errors))
-                new_code_pre.append("")
-
                 post_code = self.POST_TEMPLATE.substitute(op_b_mapping)
                 if op_c:
                     post_code += self.POST_TEMPLATE.substitute(op_c_mapping)
 
-                new_code_post.append(post_code)
-                new_code_post.append("")
             else:
-                if len(dims_kvs) != 0:
-                    code_arg_op_a = self.getPreArgStringTemplate().substitute(arg_op_other=arg_op_a)
+                code_arg_op_a = self.getPreArgStringTemplate().substitute(arg_op_other=arg_op_a)
+                if not dims_kvs:
+                    code_arg_op_other1 = self.getPreArgStringTemplate().substitute(op_b_mapping)
+                    code_arg_op_other2 = self.getPreArgStringTemplate().substitute(op_c_mapping) if op_c else ""
+
+                    expand_code = (
+                        self.getOutPlacePreExpand3Template(
+                            raise_errors == "true"
+                        ).substitute(
+                            op_b_mapping,
+                            op_other1=op_b,
+                            op_other2=op_c,
+                            arg_op_other1=arg_op_b,
+                            arg_op_other2=arg_op_c,
+                        )
+                        if op_c
+                        else self.getOutPlacePreExpand2Template(
+                            raise_errors == "true"
+                        ).substitute(op_b_mapping)
+                    )
+                    post_code = self.POST_TEMPLATE.substitute(arg_op_other=arg_op_a)
+                    post_code += self.POST_TEMPLATE.substitute(op_b_mapping)
+                    post_code += self.POST_TEMPLATE.substitute(op_c_mapping) if op_c else ""
+
+                else:
                     code_arg_op_other1 = ""
                     code_arg_op_other2 = ""
-                    expand_code = ""
-                    for idx, kv in enumerate(dims_kvs):
-                        expand_code += self.OUT_PLACE_PRE_EXPAND_PRE_DIM_TEMPLATE.substitute(
+                    expand_code = "".join(
+                        self.OUT_PLACE_PRE_EXPAND_PRE_DIM_TEMPLATE.substitute(
                             arg_op_a=arg_op_a,
                             op_dim=kv["op"],
                             arg_op_dim=kv["arg_op"],
                             arg_op_dim_value=kv["val"],
-                            idx=idx)
-
+                            idx=idx,
+                        )
+                        for idx, kv in enumerate(dims_kvs)
+                    )
                     if len(dims_kvs) == 1:
                         expand_code += self.OUT_PLACE_PRE_EXPAND1_DIM_TEMPLATE.substitute(
                             arg_op_a=arg_op_a,
@@ -281,36 +307,13 @@ class Broadcast(CWrapPlugin):
                         raise_errors=raise_errors)
                     post_code = self.POST_TEMPLATE.substitute(arg_op_other=arg_op_a)
 
-                else:
-                    code_arg_op_a = self.getPreArgStringTemplate().substitute(arg_op_other=arg_op_a)
-                    code_arg_op_other1 = self.getPreArgStringTemplate().substitute(op_b_mapping)
-                    code_arg_op_other2 = self.getPreArgStringTemplate().substitute(op_c_mapping) if op_c else ""
-
-                    if op_c:
-                        expand_code = self.getOutPlacePreExpand3Template(raise_errors == "true").substitute(
-                            op_b_mapping,
-                            op_other1=op_b,
-                            op_other2=op_c,
-                            arg_op_other1=arg_op_b,
-                            arg_op_other2=arg_op_c)
-
-                    else:
-                        expand_code = self.getOutPlacePreExpand2Template(
-                            raise_errors == "true").substitute(op_b_mapping)
-
-                    post_code = self.POST_TEMPLATE.substitute(arg_op_other=arg_op_a)
-                    post_code += self.POST_TEMPLATE.substitute(op_b_mapping)
-                    post_code += self.POST_TEMPLATE.substitute(op_c_mapping) if op_c else ""
-
                 new_code_pre.append(self.OUT_PLACE_PRE_TEMPLATE.substitute(
                     code_arg_op_a=code_arg_op_a,
                     code_arg_op_other1=code_arg_op_other1,
                     code_arg_op_other2=code_arg_op_other2,
                     expand_code=expand_code))
-                new_code_pre.append("")
-
-                new_code_post.append(post_code)
-                new_code_post.append("")
+            new_code_post.extend((post_code, ""))
+            new_code_pre.append("")
 
         template = new_code_pre + template + new_code_post
         return template

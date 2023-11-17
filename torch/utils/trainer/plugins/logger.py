@@ -15,7 +15,7 @@ class Logger(Plugin):
 
     def _join_results(self, results):
         joined_out = map(lambda i: (i[0], ' '.join(i[1])), results)
-        joined_fields = map(lambda i: '{}: {}'.format(i[0], i[1]), joined_out)
+        joined_fields = map(lambda i: f'{i[0]}: {i[1]}', joined_out)
         return '\t'.join(joined_fields)
 
     def log(self, msg):
@@ -25,8 +25,7 @@ class Logger(Plugin):
         self.trainer = trainer
 
     def gather_stats(self):
-        result = {}
-        return result
+        return {}
 
     def _align_output(self, field_idx, output):
         for output_idx, o in enumerate(output):
@@ -42,8 +41,7 @@ class Logger(Plugin):
         if isinstance(stat, dict):
             log_fields = stat.get(log_fields, [])
             name = stat.get('log_name', '.'.join(field))
-            for f in log_fields:
-                output.append(f.format(**stat))
+            output.extend(f.format(**stat) for f in log_fields)
         elif not require_dict:
             name = '.'.join(field)
             number_format = stat_parent.get('log_format', '')

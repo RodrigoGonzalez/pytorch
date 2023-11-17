@@ -71,6 +71,7 @@ def _make_function_class(class_name, update_output, update_grad_input, acc_grad_
             if arg.name == name:
                 return True
         return False
+
     save_output = has_argument(update_grad_input, 'output')
 
     param_args = {'weight', 'bias'}
@@ -126,7 +127,7 @@ def _make_function_class(class_name, update_output, update_grad_input, acc_grad_
             if param.is_optional:
                 args += (None,)
             else:
-                raise ValueError("missing required argument '%s'" % param.name)
+                raise ValueError(f"missing required argument '{param.name}'")
 
         args += tuple(additional_args)
 
@@ -257,9 +258,9 @@ def _generate_function_classes(scope_dict):
 
     classes_to_generate -= exceptions
     for fn in classes_to_generate:
-        update_output = function_by_name[fn + '_updateOutput']
-        update_grad_input = function_by_name[fn + '_updateGradInput']
-        acc_grad_parameters = function_by_name.get(fn + '_accGradParameters')
+        update_output = function_by_name[f'{fn}_updateOutput']
+        update_grad_input = function_by_name[f'{fn}_updateGradInput']
+        acc_grad_parameters = function_by_name.get(f'{fn}_accGradParameters')
         class_name = name_remap.get(fn, fn)
         # This has to call a function to retain correct references to functions
         if 'Criterion' in fn:

@@ -18,7 +18,7 @@ class SpatialZeroPadding(Module):
         h = input.size(2) + self.pad_t + self.pad_b
         w = input.size(3) + self.pad_l + self.pad_r
         if w < 1 or h < 1:
-            raise RuntimeError('input is too small (feature map size: {}x{})'.format(h, w))
+            raise RuntimeError(f'input is too small (feature map size: {h}x{w})')
         self.output.resize_(input.size(0), input.size(1), h, w)
         self.output.zero_()
         # crop input if necessary

@@ -89,7 +89,7 @@ class OptimizerMock(object):
         self.num_evals = 0
 
     def step(self, closure):
-        for i in range(random.randint(self.min_evals, self.max_evals)):
+        for _ in range(random.randint(self.min_evals, self.max_evals)):
             loss = closure()
             self.num_evals += 1
         self.num_steps += 1
@@ -101,7 +101,7 @@ class OptimizerMock(object):
 class DatasetMock(object):
 
     def __iter__(self):
-        for i in range(10):
+        for _ in range(10):
             yield torch.randn(2, 10), torch.randperm(10)[:2]
 
     def __len__(self):
@@ -193,16 +193,9 @@ class TestTrainer(TestCase):
                 ('update', self.num_iters)
             }
             for unit, num_triggers in units:
-                call_every = None
-                for i, i_unit in interval:
-                    if i_unit == unit:
-                        call_every = i
-                        break
-                if call_every:
-                    expected_num_calls = math.floor(num_triggers / call_every)
-                else:
-                    expected_num_calls = 0
-                num_calls = getattr(simple_plugin, 'num_' + unit)
+                call_every = next((i for i, i_unit in interval if i_unit == unit), None)
+                expected_num_calls = math.floor(num_triggers / call_every) if call_every else 0
+                num_calls = getattr(simple_plugin, f'num_{unit}')
                 self.assertEqual(num_calls, expected_num_calls, 0)
 
     def test_model_called(self):
@@ -241,10 +234,10 @@ class TestFFI(TestCase):
     def test_cpu(self):
         compile_extension(
             name='test_extensions.cpulib',
-            header=test_dir + '/ffi/src/cpu/lib.h',
+            header=f'{test_dir}/ffi/src/cpu/lib.h',
             sources=[
-                test_dir + '/ffi/src/cpu/lib1.c',
-                test_dir + '/ffi/src/cpu/lib2.c',
+                f'{test_dir}/ffi/src/cpu/lib1.c',
+                f'{test_dir}/ffi/src/cpu/lib2.c',
             ],
             verbose=False,
         )
@@ -269,10 +262,8 @@ class TestFFI(TestCase):
     def test_gpu(self):
         compile_extension(
             name='gpulib',
-            header=test_dir + '/ffi/src/cuda/cudalib.h',
-            sources=[
-                test_dir + '/ffi/src/cuda/cudalib.c',
-            ],
+            header=f'{test_dir}/ffi/src/cuda/cudalib.h',
+            sources=[f'{test_dir}/ffi/src/cuda/cudalib.c'],
             with_cuda=True,
             verbose=False,
         )
@@ -300,8 +291,8 @@ class TestLuaReader(TestCase):
             module = test['module']
             input = test['input']
             grad_output = test['grad_output']
-            if hasattr(self, '_transform_' + name):
-                input = getattr(self, '_transform_' + name)(input)
+            if hasattr(self, f'_transform_{name}'):
+                input = getattr(self, f'_transform_{name}')(input)
             output = module.forward(input)
             module.zeroGradParameters()
             grad_input = module.backward(input, grad_output)
@@ -314,6 +305,7 @@ class TestLuaReader(TestCase):
             else:
                 self.assertFalse('params' in test and test['params'])
                 self.assertFalse('params' in test and test['d_params'])
+
         return do_test
 
     @staticmethod
@@ -321,17 +313,15 @@ class TestLuaReader(TestCase):
         def do_test(self):
             module = test['module']
             input = test['input']
-            if name == 'L1Cost':
-                target = None
-            else:
-                target = test['target']
-            if hasattr(self, '_transform_' + name):
-                input, target = getattr(self, '_transform_' + name)(input, target)
+            target = None if name == 'L1Cost' else test['target']
+            if hasattr(self, f'_transform_{name}'):
+                input, target = getattr(self, f'_transform_{name}')(input, target)
 
             output = module.forward(input, target)
             grad_input = module.backward(input, target)
             self.assertEqual(output, test['loss'])
             self.assertEqual(grad_input, test['grad_input'])
+
         return do_test
 
     @classmethod

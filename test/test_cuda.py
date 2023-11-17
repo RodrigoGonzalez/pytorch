@@ -306,9 +306,7 @@ simple_pointwise = [
     'abs',
     'sign',
 ]
-for fn in simple_pointwise:
-    tests.append((fn, small_3d, lambda t: []))
-
+tests.extend((fn, small_3d, lambda t: []) for fn in simple_pointwise)
 simple_pointwise_float = [
     'log',
     'log1p',
@@ -331,9 +329,10 @@ simple_pointwise_float = [
     'ceil',
 ]
 
-for fn in simple_pointwise_float:
-    tests.append((fn, small_3d, lambda t: [], None, float_types))
-
+tests.extend(
+    (fn, small_3d, lambda t: [], None, float_types)
+    for fn in simple_pointwise_float
+)
 _cycles_per_ms = None
 
 
@@ -898,22 +897,20 @@ if HAS_CUDA:
 
             precision = custom_precision.get(name, TestCuda.precision)
             for inplace in (True, False):
-                if inplace:
-                    name_inner = name + '_'
-                else:
-                    name_inner = name
+                name_inner = f'{name}_' if inplace else name
                 if not hasattr(tensor, name_inner):
                     continue
                 if not hasattr(gpu_tensor, name_inner):
-                    print("Ignoring {}, because it's not implemented by torch.cuda.{}".format(
-                        name_inner, gpu_tensor.__class__.__name__))
+                    print(
+                        f"Ignoring {name_inner}, because it's not implemented by torch.cuda.{gpu_tensor.__class__.__name__}"
+                    )
                     continue
 
-                test_name = 'test_' + t.__name__ + '_' + name_inner
+                test_name = f'test_{t.__name__}_{name_inner}'
                 if desc:
-                    test_name += '_' + desc
+                    test_name += f'_{desc}'
 
-                assert not hasattr(TestCuda, test_name), "Duplicated test name: " + test_name
+                assert not hasattr(TestCuda, test_name), f"Duplicated test name: {test_name}"
                 setattr(TestCuda, test_name, compare_cpu_gpu(constr, arg_constr, name_inner, t, precision))
 
 

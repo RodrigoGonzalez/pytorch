@@ -10,7 +10,7 @@ def replicate(network, devices):
     params = list(network.parameters())
     param_indices = {param: idx for idx, param in enumerate(params)}
     param_copies = Broadcast(devices)(*params)
-    if len(params) > 0:
+    if params:
         param_copies = [param_copies[i:i + len(params)]
                         for i in range(0, len(param_copies), len(params))]
 
@@ -19,7 +19,7 @@ def replicate(network, devices):
     buffer_copies = comm.broadcast_coalesced(buffers, devices)
 
     modules = list(network.modules())
-    module_copies = [[] for device in devices]
+    module_copies = [[] for _ in devices]
     module_indices = {}
 
     for i, module in enumerate(modules):

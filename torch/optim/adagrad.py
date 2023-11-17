@@ -67,13 +67,14 @@ class Adagrad(Optimizer):
                     grad = grad.coalesce()  # the update is non-linear so indices must be unique
                     grad_indices = grad._indices()
                     grad_values = grad._values()
-                    size = torch.Size([x for x in grad.size()])
+                    size = torch.Size(list(grad.size()))
 
                     def make_sparse(values):
                         constructor = type(p.grad.data)
                         if grad_indices.dim() == 0 or values.dim() == 0:
                             return constructor()
                         return constructor(grad_indices, values, size)
+
                     state['sum'].add_(make_sparse(grad_values.pow(2)))
                     std = state['sum']._sparse_mask(grad)
                     std_values = std._values().sqrt_().add_(1e-10)

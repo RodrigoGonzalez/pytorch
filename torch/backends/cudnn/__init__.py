@@ -21,25 +21,30 @@ def _libcudnn():
             # Check that cuDNN major and minor versions match
             if (__cudnn_version // 100) != (compile_version // 100):
                 raise RuntimeError(
-                    'cuDNN version mismatch: PyTorch was compiled against {} '
-                    'but linked against {}'.format(compile_version, __cudnn_version))
+                    f'cuDNN version mismatch: PyTorch was compiled against {compile_version} but linked against {__cudnn_version}'
+                )
         else:
             lib = None
     return lib
 
 
 def version():
-    if _libcudnn() is None:
-        return None
-    return __cudnn_version
+    return None if _libcudnn() is None else __cudnn_version
 
 
 def is_acceptable(tensor):
     if not enabled:
         return False
-    if not (isinstance(tensor, torch.cuda.HalfTensor) or
-            isinstance(tensor, torch.cuda.FloatTensor) or
-            isinstance(tensor, torch.cuda.DoubleTensor)):
+    if not (
+        isinstance(
+            tensor,
+            (
+                torch.cuda.HalfTensor,
+                torch.cuda.FloatTensor,
+                torch.cuda.DoubleTensor,
+            ),
+        )
+    ):
         return False
     if not torch._C.has_cudnn:
         warnings.warn(
@@ -94,7 +99,7 @@ class CuDNNHandle:
 class CuDNNError(RuntimeError):
     def __init__(self, status):
         self.status = status
-        msg = '{}: {}'.format(status, get_error_string(status))
+        msg = f'{status}: {get_error_string(status)}'
         super(CuDNNError, self).__init__(msg)
 
 
@@ -291,7 +296,7 @@ def c_type(tensor):
     elif isinstance(tensor, torch.cuda.DoubleTensor):
         return ctypes.c_double
     else:
-        raise ValueError("unknown type '{}'".format(type(tensor)))
+        raise ValueError(f"unknown type '{type(tensor)}'")
 
 
 def int_array(itr):

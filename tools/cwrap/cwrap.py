@@ -92,7 +92,7 @@ class cwrap(object):
                     output.append(wrapper)
             elif in_declaration:
                 declaration_lines.append(line)
-            elif '!!inc ' == line[:6]:
+            elif line[:6] == '!!inc ':
                 fname = os.path.join(self.base_path, line[6:].strip())
                 with open(fname, 'r') as f:
                     included = f.read().split('\n')
@@ -119,7 +119,7 @@ class cwrap(object):
         # Propagate defaults from declaration to options
         for option in declaration['options']:
             for k, v in declaration.items():
-                if k != 'name' and k != 'options':
+                if k not in ['name', 'options']:
                     option.setdefault(k, v)
 
     def parse_arguments(self, args):
@@ -189,8 +189,7 @@ class cwrap(object):
             tmpl = getattr(self, base_fn_name)(arg, option)
             if tmpl is None:
                 fn = 'check' if base_fn_name == 'get_type_check' else 'unpack'
-                raise RuntimeError("Missing type {} for '{} {}'".format(
-                                   fn, arg['type'], arg['name']))
+                raise RuntimeError(f"Missing type {fn} for '{arg['type']} {arg['name']}'")
             res = tmpl.substitute(arg=accessor, idx=arg.get('idx'))
             for plugin in self.plugins:
                 res = getattr(plugin, plugin_fn_name)(res, arg, accessor)

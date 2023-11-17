@@ -41,5 +41,6 @@ class Threshold(Module):
     def validateParameters(self):
         if self.inplace:
             if self.value > self.threshold:
-                raise RuntimeError('in-place processing requires value ({}) to not '
-                                   'exceed threshold ({})'.format(self.value, self.threshold))
+                raise RuntimeError(
+                    f'in-place processing requires value ({self.value}) to not exceed threshold ({self.threshold})'
+                )

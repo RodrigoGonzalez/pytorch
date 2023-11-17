@@ -122,10 +122,7 @@ class RNNBase(Module):
                 suffix = '_reverse' if direction == 1 else ''
                 weights = ['weight_ih_l{}{}', 'weight_hh_l{}{}', 'bias_ih_l{}{}', 'bias_hh_l{}{}']
                 weights = [x.format(layer, suffix) for x in weights]
-                if self.bias:
-                    self._all_weights += [weights]
-                else:
-                    self._all_weights += [weights[:2]]
+                self._all_weights += [weights] if self.bias else [weights[:2]]
 
     @property
     def all_weights(self):
@@ -193,8 +190,7 @@ class RNN(RNNBase):
             elif kwargs['nonlinearity'] == 'relu':
                 mode = 'RNN_RELU'
             else:
-                raise ValueError("Unknown nonlinearity '{}'".format(
-                    kwargs['nonlinearity']))
+                raise ValueError(f"Unknown nonlinearity '{kwargs['nonlinearity']}'")
             del kwargs['nonlinearity']
         else:
             mode = 'RNN_TANH'
@@ -416,8 +412,7 @@ class RNNCell(RNNCellBase):
         elif self.nonlinearity == "relu":
             func = self._backend.RNNReLUCell
         else:
-            raise RuntimeError(
-                "Unknown nonlinearity: {}".format(self.nonlinearity))
+            raise RuntimeError(f"Unknown nonlinearity: {self.nonlinearity}")
 
         return func(
             input, hx,

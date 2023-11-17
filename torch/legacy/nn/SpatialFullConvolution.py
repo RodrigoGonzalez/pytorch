@@ -198,15 +198,15 @@ class SpatialFullConvolution(Module):
 
     def __repr__(self):
         s = super(SpatialFullConvolution, self).__repr__()
-        s += '({} -> {}, {}x{}'.format(self.nInputPlane, self.nOutputPlane, self.kW, self.kH)
+        s += f'({self.nInputPlane} -> {self.nOutputPlane}, {self.kW}x{self.kH}'
         if self.dW != 1 or self.dH != 1 or self.padW != 0 or self.padH != 0:
-            s += ', {}, {}'.format(self.dW, self.dH)
+            s += f', {self.dW}, {self.dH}'
 
         if (self.padW or self.padH) and (self.padW != 0 or self.padH != 0):
-            s += ', {}, {}'.format(self.padW, self.padH)
+            s += f', {self.padW}, {self.padH}'
 
         if (self.adjW or self.adjH) and (self.adjW != 0 or self.adjH != 0):
-            s += ', {}, {}'.format(self.adjW, self.adjH)
+            s += f', {self.adjW}, {self.adjH}'
 
         s += ')'
         if self.bias is None:

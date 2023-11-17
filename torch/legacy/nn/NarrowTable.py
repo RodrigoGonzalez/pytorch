@@ -18,7 +18,7 @@ class NarrowTable(Module):
 
     def updateGradInput(self, input, gradOutput):
         if len(self.gradInput) != len(input):
-            self.gradInput[:] = [None for i in range(len(input))]
+            self.gradInput[:] = [None for _ in range(len(input))]
 
         assert len(gradOutput) == self.length
         for i in range(self.length):

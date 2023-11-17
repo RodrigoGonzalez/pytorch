@@ -19,10 +19,7 @@ class SplitTable(Module):
         dimension = self._getPositiveDimension(input)
         slices = input.size(dimension)
 
-        currentOutput = []
-        for i in range(slices):
-            currentOutput.append(input.select(dimension, i))
-
+        currentOutput = [input.select(dimension, i) for i in range(slices)]
         self.output = currentOutput
         return self.output
 

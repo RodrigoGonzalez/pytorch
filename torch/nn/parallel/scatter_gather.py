@@ -44,7 +44,6 @@ def gather(outputs, target_device, dim=0):
         out = outputs[0]
         if isinstance(out, Variable):
             return Gather(target_device, dim=dim)(*outputs)
-        if out is None:
-            return None
-        return type(out)(map(gather_map, zip(*outputs)))
+        return None if out is None else type(out)(map(gather_map, zip(*outputs)))
+
     return gather_map(outputs)

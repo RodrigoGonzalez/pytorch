@@ -366,10 +366,7 @@ class NNTestCase(TestCase):
 
     def _flatten_tensors(self, x):
         if torch.is_tensor(x):
-            if x.is_sparse:
-                return x.to_dense().view(-1)
-            else:
-                return x.view(-1)
+            return x.to_dense().view(-1) if x.is_sparse else x.view(-1)
         elif isinstance(x, Variable):
             return self._flatten_tensors(x.data)
         else:
@@ -435,16 +432,22 @@ class NNTestCase(TestCase):
 
         def fw(input):
             out = self._forward(module, input)
-            if isinstance(out, Variable):
-                return out.data
-            return out
+            return out.data if isinstance(out, Variable) else out
 
         res = tuple()
         input = contiguous(input)
         if jacobian_input:
             res += get_numerical_jacobian(fw, input, input, eps=1e-6),
         if jacobian_parameters:
-            res += torch.cat(list(get_numerical_jacobian(fw, input, p, eps=1e-6) for p in param), 0),
+            res += (
+                torch.cat(
+                    [
+                        get_numerical_jacobian(fw, input, p, eps=1e-6)
+                        for p in param
+                    ],
+                    0,
+                ),
+            )
         return res
 
     def check_jacobian(self, module, input, jacobian_input=True):
@@ -505,11 +508,11 @@ class TestBase(object):
 
     def get_name(self):
         if self.fullname is not None:
-            return 'test_' + self.fullname
+            return f'test_{self.fullname}'
 
-        test_name = 'test_' + self.constructor.__name__
+        test_name = f'test_{self.constructor.__name__}'
         if self.desc:
-            test_name += '_' + self.desc
+            test_name += f'_{self.desc}'
         return test_name
 
     def _unpack_input(self, input):
@@ -642,7 +645,7 @@ class ModuleTest(TestBase):
             gpu_output = test_case._forward(gpu_module, gpu_input)
             test_case.assertEqual(cpu_output, gpu_output, 2e-4)
 
-            for i in range(5):
+            for _ in range(5):
                 cpu_output_t = cpu_output.data if isinstance(cpu_output, Variable) else cpu_output
                 cpu_gradOutput = cpu_output_t.clone().bernoulli_()
                 gpu_gradOutput = cpu_gradOutput.type('torch.cuda.FloatTensor')
@@ -655,11 +658,12 @@ class ModuleTest(TestBase):
             self.test_noncontig(test_case, gpu_module, gpu_input)
         except NotImplementedError:
             pass
-        # TODO: remove this after CUDA scatter_ is implemented
         except AttributeError as e:
-            if len(e.args) == 1 and "'FloatTensor' object has no attribute 'scatter_'" in e.args[0]:
-                pass
-            else:
+            if (
+                len(e.args) != 1
+                or "'FloatTensor' object has no attribute 'scatter_'"
+                not in e.args[0]
+            ):
                 raise
 
 

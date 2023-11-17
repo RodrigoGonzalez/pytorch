@@ -41,7 +41,9 @@ def conv2d(input, weight, bias=None, stride=1, padding=0, dilation=1,
         >>> F.conv2d(inputs, filters, padding=1)
     """
     if input is not None and input.dim() != 4:
-        raise ValueError("Expected 4D tensor as input, got {}D tensor instead.".format(input.dim()))
+        raise ValueError(
+            f"Expected 4D tensor as input, got {input.dim()}D tensor instead."
+        )
 
     f = ConvNd(_pair(stride), _pair(padding), _pair(dilation), False,
                _pair(0), groups, torch.backends.cudnn.benchmark, torch.backends.cudnn.enabled)
@@ -72,7 +74,9 @@ def conv1d(input, weight, bias=None, stride=1, padding=0, dilation=1,
         >>> F.conv1d(inputs, filters)
     """
     if input is not None and input.dim() != 3:
-        raise ValueError("Expected 3D tensor as input, got {}D tensor instead.".format(input.dim()))
+        raise ValueError(
+            f"Expected 3D tensor as input, got {input.dim()}D tensor instead."
+        )
 
     f = ConvNd(_single(stride), _single(padding), _single(dilation), False,
                _single(0), groups, torch.backends.cudnn.benchmark, torch.backends.cudnn.enabled)
@@ -105,7 +109,9 @@ def conv3d(input, weight, bias=None, stride=1, padding=0, dilation=1,
     """
 
     if input is not None and input.dim() != 5:
-        raise ValueError("Expected 5D tensor as input, got {}D tensor instead.".format(input.dim()))
+        raise ValueError(
+            f"Expected 5D tensor as input, got {input.dim()}D tensor instead."
+        )
 
     f = ConvNd(_triple(stride), _triple(padding), _triple(dilation), False,
                _triple(0), groups, torch.backends.cudnn.benchmark, torch.backends.cudnn.enabled)
@@ -132,7 +138,9 @@ def conv_transpose1d(input, weight, bias=None, stride=1, padding=0,
         dilation: the spacing between kernel elements. Default: 1
     """
     if input is not None and input.dim() != 3:
-        raise ValueError("Expected 3D tensor as input, got {}D tensor instead.".format(input.dim()))
+        raise ValueError(
+            f"Expected 3D tensor as input, got {input.dim()}D tensor instead."
+        )
 
     f = ConvNd(_single(stride), _single(padding), _single(dilation), True,
                _single(output_padding),
@@ -163,7 +171,9 @@ def conv_transpose2d(input, weight, bias=None, stride=1, padding=0,
     """
 
     if input is not None and input.dim() != 4:
-        raise ValueError("Expected 4D tensor as input, got {}D tensor instead.".format(input.dim()))
+        raise ValueError(
+            f"Expected 4D tensor as input, got {input.dim()}D tensor instead."
+        )
 
     f = ConvNd(_pair(stride), _pair(padding), _pair(dilation), True,
                _pair(output_padding), groups, torch.backends.cudnn.benchmark, torch.backends.cudnn.enabled)
@@ -192,7 +202,9 @@ def conv_transpose3d(input, weight, bias=None, stride=1, padding=0,
         dilation: the spacing between kernel elements. Default: 1
     """
     if input is not None and input.dim() != 5:
-        raise ValueError("Expected 5D tensor as input, got {}D tensor instead.".format(input.dim()))
+        raise ValueError(
+            f"Expected 5D tensor as input, got {input.dim()}D tensor instead."
+        )
 
     f = ConvNd(_triple(stride), _triple(padding), _triple(dilation), True,
                _triple(output_padding), groups, torch.backends.cudnn.benchmark, torch.backends.cudnn.enabled)
@@ -224,8 +236,7 @@ def avg_pool1d(input, kernel_size, stride=None, padding=0,
         [torch.FloatTensor of size 1x1x3]
     """
     if input.dim() != 3:
-        raise ValueError('expected 3D input (got {} dimensions)'
-                         .format(input.dim()))
+        raise ValueError(f'expected 3D input (got {input.dim()} dimensions)')
     kernel_size = _single(kernel_size) + (1,)
     stride = _single(stride) + (1,) if stride is not None else kernel_size
     padding = _single(padding) + (0,)
@@ -286,10 +297,10 @@ def max_pool3d(input, kernel_size, stride=None, padding=0, dilation=1,
 
 def _unpool_output_size(input, kernel_size, stride, padding, output_size):
     input_size = input.size()
-    default_size = []
-    for d in range(len(kernel_size)):
-        default_size.append((input_size[d + 2] - 1) * stride[d] +
-                            kernel_size[d] - 2 * padding[d])
+    default_size = [
+        (input_size[d + 2] - 1) * stride[d] + kernel_size[d] - 2 * padding[d]
+        for d in range(len(kernel_size))
+    ]
     if output_size is None:
         return default_size
 
@@ -297,17 +308,16 @@ def _unpool_output_size(input, kernel_size, stride, padding, output_size):
     if len(output_size) == len(kernel_size) + 2:
         output_size = output_size[2:]
     if len(output_size) != len(kernel_size):
-        raise ValueError("output_size should be a sequence containing "
-                         "{} or {} elements, but it has a length of '{}'"
-                         .format(len(kernel_size), len(kernel_size) + 2,
-                                 len(output_size)))
+        raise ValueError(
+            f"output_size should be a sequence containing {len(kernel_size)} or {len(kernel_size) + 2} elements, but it has a length of '{len(output_size)}'"
+        )
     for d in range(len(kernel_size)):
         min_size = default_size[d] - stride[d]
         max_size = default_size[d] + stride[d]
         if not (min_size < output_size[d] < max_size):
             raise ValueError(
-                'invalid output_size "{}" (dim {} must be between {} and {})'
-                .format(output_size, d, min_size, max_size))
+                f'invalid output_size "{output_size}" (dim {d} must be between {min_size} and {max_size})'
+            )
 
     return output_size
 
@@ -409,8 +419,7 @@ def dropout(input, p=0.5, training=False, inplace=False):
 
 def alpha_dropout(input, p=0.5, training=False):
     if p < 0 or p > 1:
-        raise ValueError("dropout probability has to be between 0 and 1, "
-                         "but got {}".format(p))
+        raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
 
     if p == 0 or not training:
         return input
@@ -440,8 +449,7 @@ def relu(input, inplace=False):
 def glu(input, dim=-1):
     ndim = input.dim()
     if dim < -ndim or dim >= ndim:
-        raise IndexError("dim {} is out of range for tensor of dimension {}"
-                         .format(dim, ndim))
+        raise IndexError(f"dim {dim} is out of range for tensor of dimension {ndim}")
     if dim < 0:
         dim += ndim
     return _functions.thnn.GatedLinear(dim)(input)
@@ -576,7 +584,7 @@ def nll_loss(input, target, weight=None, size_average=True):
     elif dim == 4:
         f = _functions.thnn.NLLLoss2d(size_average, weight=weight)
     else:
-        raise ValueError('Expected 2 or 4 dimensions (got {})'.format(dim))
+        raise ValueError(f'Expected 2 or 4 dimensions (got {dim})')
     return f(input, target)
 
 
@@ -697,9 +705,9 @@ def upsample(input, size=None, scale_factor=None, mode='nearest'):
     elif input.dim() == 5 and mode == 'trilinear':
             return _functions.thnn.UpsamplingTrilinear3d(_triple(size), scale_factor)(input)
     else:
-        raise NotImplementedError("Input Error: Only 4D and 5D input Tensors supported"
-                                  " (got {}D) for the modes: nearest | bilinear | trilinear"
-                                  " (got {})".format(input.dim(), mode))
+        raise NotImplementedError(
+            f"Input Error: Only 4D and 5D input Tensors supported (got {input.dim()}D) for the modes: nearest | bilinear | trilinear (got {mode})"
+        )
 
 
 def upsample_nearest(input, size=None, scale_factor=None):
@@ -761,9 +769,7 @@ def pad(input, pad, mode='constant', value=0):
             return _functions.thnn.ReplicationPad2d(*pad)(input)
     elif input.dim() == 5:
         assert len(pad) == 6, '5D tensors expect 6 values for padding'
-        if mode == 'constant':
-            raise NotImplementedError
-        elif mode == 'reflect':
+        if mode in ['constant', 'reflect']:
             raise NotImplementedError
         elif mode == 'replicate':
             return _functions.thnn.ReplicationPad3d(*pad)(input)
@@ -876,8 +882,7 @@ def triplet_margin_loss(anchor, positive, negative, margin=1.0, p=2, eps=1e-6, s
         d_n = torch.min(d_n, d_s)
 
     dist_hinge = torch.clamp(margin + d_p - d_n, min=0.0)
-    loss = torch.mean(dist_hinge)
-    return loss
+    return torch.mean(dist_hinge)
 
 
 def normalize(input, p=2, dim=1, eps=1e-12):

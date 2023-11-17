@@ -33,10 +33,9 @@ class UpsamplingNearest2d(_UpsamplingBase):
         if self.scale_factor is None:
             if (self.size[0] % input.size(2) != 0 or
                     self.size[1] % input.size(3) != 0):
-                raise RuntimeError("output size specified in UpsamplingNearest "
-                                   "({}) has to be divisible by the input size, but got: "
-                                   "{}".format('x'.join(map(str, self.size)),
-                                               'x'.join(map(str, input.size()))))
+                raise RuntimeError(
+                    f"output size specified in UpsamplingNearest ({'x'.join(map(str, self.size))}) has to be divisible by the input size, but got: {'x'.join(map(str, input.size()))}"
+                )
             self.scale_factor = self.size[0] // input.size(2)
             if self.scale_factor != self.size[1] // input.size(3):
                 raise RuntimeError("input aspect ratio doesn't match the "
@@ -78,12 +77,12 @@ def _check_linear_scale_factor(scale_factor, dim=2):
         raise ValueError("dim has to be 2 or 3")
 
     try:
-        assert len(scale_factor) == 2 or len(scale_factor) == 3
+        assert len(scale_factor) in {2, 3}
         assert all(isinstance(s, Integral) and s >= 1 for s in scale_factor)
     except AssertionError as e:
-        raise ValueError('scale_factor must be a non-negative integer, '
-                         'or a tuple of non-negative integers for bilinear and trilinear upsampling, but got: '
-                         '{}'.format(scale_factor))
+        raise ValueError(
+            f'scale_factor must be a non-negative integer, or a tuple of non-negative integers for bilinear and trilinear upsampling, but got: {scale_factor}'
+        )
     return scale_factor
 
 
@@ -155,10 +154,9 @@ class UpsamplingNearest3d(_UpsamplingBase):
         if self.scale_factor is None:
             if (self.size[0] % input.size(2) != 0 or self.size[1] % input.size(3) != 0 or
                self.size[2] % input.size(4) != 0):
-                raise RuntimeError("output size specified in UpSamplingNearest "
-                                   "({}) has to be divisible by the input size, but got: "
-                                   "{}".format('x'.join(map(str, self.size)),
-                                               'x'.join(map(str, input.size()))))
+                raise RuntimeError(
+                    f"output size specified in UpSamplingNearest ({'x'.join(map(str, self.size))}) has to be divisible by the input size, but got: {'x'.join(map(str, input.size()))}"
+                )
             self.scale_factor = self.size[0] // input.size(2)
             if (self.scale_factor != self.size[1] // input.size(3) or
                self.scale_factor != self.size[2] // input.size(4)):

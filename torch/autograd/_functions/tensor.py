@@ -110,7 +110,7 @@ class Expand(Function):
     @staticmethod
     def backward(ctx, grad_output):
         grad_input = grad_output
-        for i in range(ctx.num_unsqueezed):
+        for _ in range(ctx.num_unsqueezed):
             grad_input = grad_input.sum(0).squeeze(0)
         for dim in ctx.expanded_dims:
             grad_input = grad_input.sum(dim, True)
@@ -300,19 +300,15 @@ class Resize(Function):
         ctx.sizes = sizes
         ctx.numel = reduce(lambda x, y: x * y, sizes, 1)
         if tensor.numel() != ctx.numel:
-            raise RuntimeError(("requested resize to {} ({} elements in total), "
-                                "but the given tensor has a size of {} ({} elements). "
-                                "autograd's resize can only change the shape of a given "
-                                "tensor, while preserving the number of elements. ").format(
-                'x'.join(map(str, sizes)), ctx.numel,
-                'x'.join(map(str, tensor.size())), tensor.numel()))
+            raise RuntimeError(
+                f"requested resize to {'x'.join(map(str, sizes))} ({ctx.numel} elements in total), but the given tensor has a size of {'x'.join(map(str, tensor.size()))} ({tensor.numel()} elements). autograd's resize can only change the shape of a given tensor, while preserving the number of elements. "
+            )
         ctx.input_sizes = tensor.size()
-        if tensor.is_contiguous():
-            result = tensor.new(tensor).contiguous().view(*sizes)
-            ctx.mark_shared_storage((tensor, result))
-            return result
-        else:
+        if not tensor.is_contiguous():
             return tensor.contiguous().view(*sizes)
+        result = tensor.new(tensor).contiguous().view(*sizes)
+        ctx.mark_shared_storage((tensor, result))
+        return result
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -339,16 +335,9 @@ class Squeeze(InplaceFunction):
         ctx.input_size = input.size()
         if inplace:
             ctx.mark_dirty(input)
-            if dim is not None:
-                return input.squeeze_(dim)
-            else:
-                return input.squeeze_()
+            return input.squeeze_(dim) if dim is not None else input.squeeze_()
         else:
-            if dim is not None:
-                result = input.squeeze(dim)
-            else:
-                result = input.squeeze()
-
+            result = input.squeeze(dim) if dim is not None else input.squeeze()
             ctx.mark_shared_storage((input, result))
             return result
 

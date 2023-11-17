@@ -77,8 +77,7 @@ class InstanceNorm1d(_InstanceNorm):
 
     def _check_input_dim(self, input):
         if input.dim() != 3:
-            raise ValueError('expected 3D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 3D input (got {input.dim()}D input)')
         super(InstanceNorm1d, self)._check_input_dim(input)
 
 
@@ -121,8 +120,7 @@ class InstanceNorm2d(_InstanceNorm):
 
     def _check_input_dim(self, input):
         if input.dim() != 4:
-            raise ValueError('expected 4D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 4D input (got {input.dim()}D input)')
         super(InstanceNorm2d, self)._check_input_dim(input)
 
 
@@ -166,6 +164,5 @@ class InstanceNorm3d(_InstanceNorm):
 
     def _check_input_dim(self, input):
         if input.dim() != 5:
-            raise ValueError('expected 5D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 5D input (got {input.dim()}D input)')
         super(InstanceNorm3d, self)._check_input_dim(input)

@@ -124,7 +124,7 @@ class Normalize(Module):
         return self.gradInput
 
     def __repr__(self):
-        return super(Normalize, self).__repr__() + '({})'.format(self.p)
+        return f'{super(Normalize, self).__repr__()}({self.p})'
 
     def type(self, type, tensorCache=None):
         if not type:

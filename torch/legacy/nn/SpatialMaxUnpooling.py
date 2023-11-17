@@ -41,4 +41,4 @@ class SpatialMaxUnpooling(Module):
         return self.gradInput
 
     def __repr__(self):
-        return 'nn.SpatialMaxUnpooling associated to ' + self.pooling.__repr__()
+        return f'nn.SpatialMaxUnpooling associated to {self.pooling.__repr__()}'

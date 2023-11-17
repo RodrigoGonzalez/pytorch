@@ -73,8 +73,8 @@ class VolumetricFullConvolution(Module):
 
         return input
 
-    def _calculateAdj(targetSize, ker, pad, stride):
-        return (targetSize + 2 * pad - ker) % stride
+    def _calculateAdj(self, ker, pad, stride):
+        return (self + 2 * pad - ker) % stride
 
     def updateOutput(self, input):
         inputTensor = input
@@ -192,18 +192,18 @@ class VolumetricFullConvolution(Module):
 
     def __repr__(self):
         s = super(VolumetricFullConvolution, self).__repr__()
-        s += '({} -> {}, {}x{}x{}'.format(self.nInputPlane, self.nOutputPlane, self.kT, self.kW, self.kH)
+        s += f'({self.nInputPlane} -> {self.nOutputPlane}, {self.kT}x{self.kW}x{self.kH}'
         if self.dT != 1 or self.dW != 1 or self.dH != 1 or \
-                self.padT != 0 or self.padW != 0 or self.padH != 0 or \
-                self.adjT != 0 or self.adjW != 0 or self.adjH != 0:
-            s += ', {}, {}, {}'.format(self.dT, self.dW, self.dH)
+                    self.padT != 0 or self.padW != 0 or self.padH != 0 or \
+                    self.adjT != 0 or self.adjW != 0 or self.adjH != 0:
+            s += f', {self.dT}, {self.dW}, {self.dH}'
 
         if self.padT != 0 or self.padW != 0 or self.padH != 0 or \
-                self.adjT != 0 or self.adjW != 0 or self.adjH != 0:
-            s += ', {}, {}, {}'.format(self.padT, self.padW, self.padH)
+                    self.adjT != 0 or self.adjW != 0 or self.adjH != 0:
+            s += f', {self.padT}, {self.padW}, {self.padH}'
 
         if self.adjT != 0 or self.adjW != 0 or self.adjH != 0:
-            s += ', {}, {}, {}'.format(self.adjT, self.adjW, self.adjH)
+            s += f', {self.adjT}, {self.adjW}, {self.adjH}'
 
         s += ')'
         return s

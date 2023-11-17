@@ -17,8 +17,7 @@ def _addindent(s_, numSpaces):
     first = s.pop(0)
     s = [(numSpaces * ' ') + line for line in s]
     s = '\n'.join(s)
-    s = first + '\n' + s
-    return s
+    return first + '\n' + s
 
 
 class Module(object):
@@ -89,9 +88,9 @@ class Module(object):
         if param is None:
             self._parameters[name] = None
         elif not isinstance(param, Parameter):
-            raise TypeError("cannot assign '{}' object to parameter '{}' "
-                            "(torch.nn.Parameter or None required)"
-                            .format(torch.typename(param), name))
+            raise TypeError(
+                f"cannot assign '{torch.typename(param)}' object to parameter '{name}' (torch.nn.Parameter or None required)"
+            )
         elif param.grad_fn:
             raise ValueError(
                 "Cannot assign non-leaf Variable to parameter '{0}'. Model "
@@ -107,10 +106,9 @@ class Module(object):
         The module can be accessed as an attribute using the given name.
         """
         if hasattr(self, name):
-            raise KeyError("attribute already exists '{}'".format(name))
+            raise KeyError(f"attribute already exists '{name}'")
         if not isinstance(module, Module) and module is not None:
-            raise TypeError("{} is not a Module subclass".format(
-                torch.typename(module)))
+            raise TypeError(f"{torch.typename(module)} is not a Module subclass")
         self._modules[name] = module
 
     def _apply(self, fn):
@@ -208,8 +206,8 @@ class Module(object):
             hook_result = hook(self, input, result)
             if hook_result is not None:
                 raise RuntimeError(
-                    "forward hooks should never return any values, but '{}'"
-                    "didn't return None".format(hook))
+                    f"forward hooks should never return any values, but '{hook}'didn't return None"
+                )
         if len(self._backward_hooks) > 0:
             var = result
             while not isinstance(var, Variable):
@@ -235,8 +233,9 @@ class Module(object):
             modules = self.__dict__['_modules']
             if name in modules:
                 return modules[name]
-        raise AttributeError("'{}' object has no attribute '{}'".format(
-            type(self).__name__, name))
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
 
     def __setattr__(self, name, value):
         def remove_from(*dicts):
@@ -328,8 +327,7 @@ class Module(object):
         own_state = self.state_dict()
         for name, param in state_dict.items():
             if name not in own_state:
-                raise KeyError('unexpected key "{}" in state_dict'
-                               .format(name))
+                raise KeyError(f'unexpected key "{name}" in state_dict')
             if isinstance(param, Parameter):
                 # backwards compatibility for serialized parameters
                 param = param.data
@@ -337,7 +335,7 @@ class Module(object):
 
         missing = set(own_state.keys()) - set(state_dict.keys())
         if len(missing) > 0:
-            raise KeyError('missing keys in state_dict: "{}"'.format(missing))
+            raise KeyError(f'missing keys in state_dict: "{missing}"')
 
     def parameters(self):
         """Returns an iterator over module parameters.
@@ -370,8 +368,7 @@ class Module(object):
                 yield prefix + ('.' if prefix else '') + name, p
         for mname, module in self.named_children():
             submodule_prefix = prefix + ('.' if prefix else '') + mname
-            for name, p in module.named_parameters(memo, submodule_prefix):
-                yield name, p
+            yield from module.named_parameters(memo, submodule_prefix)
 
     def _all_buffers(self, memo=None):
         if memo is None:
@@ -381,8 +378,7 @@ class Module(object):
                 memo.add(b)
                 yield b
         for module in self.children():
-            for b in module._all_buffers(memo):
-                yield b
+            yield from module._all_buffers(memo)
 
     def children(self):
         """Returns an iterator over immediate children modules."""
@@ -450,8 +446,7 @@ class Module(object):
             yield prefix, self
             for name, module in self._modules.items():
                 submodule_prefix = prefix + ('.' if prefix else '') + name
-                for m in module.named_modules(memo, submodule_prefix):
-                    yield m
+                yield from module.named_modules(memo, submodule_prefix)
 
     def train(self, mode=True):
         """Sets the module in training mode.
@@ -488,8 +483,8 @@ class Module(object):
         for key, module in self._modules.items():
             modstr = module.__repr__()
             modstr = _addindent(modstr, 2)
-            tmpstr = tmpstr + '  (' + key + '): ' + modstr + '\n'
-        tmpstr = tmpstr + ')'
+            tmpstr = f'{tmpstr}  ({key}): {modstr}' + '\n'
+        tmpstr = f'{tmpstr})'
         return tmpstr
 
     def __dir__(self):

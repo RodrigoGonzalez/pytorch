@@ -15,7 +15,7 @@ class MV(Module):
 
     def updateOutput(self, input):
         M, v = input
-        assert M.ndimension() == 2 or M.ndimension() == 3
+        assert M.ndimension() in [2, 3]
 
         if M.ndimension() == 2:
             assert v.ndimension() == 1
@@ -38,7 +38,7 @@ class MV(Module):
         self.gradInput[1].resize_as_(v)
         gradOutput = gradOutput.contiguous()
 
-        assert gradOutput.ndimension() == 1 or gradOutput.ndimension() == 2
+        assert gradOutput.ndimension() in [1, 2]
 
         if gradOutput.ndimension() == 2:
             assert M.ndimension() == 3

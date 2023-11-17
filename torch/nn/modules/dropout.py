@@ -36,8 +36,7 @@ class Dropout(Module):
     def __init__(self, p=0.5, inplace=False):
         super(Dropout, self).__init__()
         if p < 0 or p > 1:
-            raise ValueError("dropout probability has to be between 0 and 1, "
-                             "but got {}".format(p))
+            raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
         self.p = p
         self.inplace = inplace
 
@@ -46,9 +45,7 @@ class Dropout(Module):
 
     def __repr__(self):
         inplace_str = ', inplace' if self.inplace else ''
-        return self.__class__.__name__ + ' (' \
-            + 'p = ' + str(self.p) \
-            + inplace_str + ')'
+        return f'{self.__class__.__name__} (p = {str(self.p)}{inplace_str})'
 
 
 class Dropout2d(Module):
@@ -88,8 +85,7 @@ class Dropout2d(Module):
     def __init__(self, p=0.5, inplace=False):
         super(Dropout2d, self).__init__()
         if p < 0 or p > 1:
-            raise ValueError("dropout probability has to be between 0 and 1, "
-                             "but got {}".format(p))
+            raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
         self.p = p
         self.inplace = inplace
 
@@ -98,9 +94,7 @@ class Dropout2d(Module):
 
     def __repr__(self):
         inplace_str = ', inplace' if self.inplace else ''
-        return self.__class__.__name__ + ' (' \
-            + 'p=' + str(self.p) \
-            + inplace_str + ')'
+        return f'{self.__class__.__name__} (p={str(self.p)}{inplace_str})'
 
 
 class Dropout3d(Module):
@@ -140,8 +134,7 @@ class Dropout3d(Module):
     def __init__(self, p=0.5, inplace=False):
         super(Dropout3d, self).__init__()
         if p < 0 or p > 1:
-            raise ValueError("dropout probability has to be between 0 and 1, "
-                             "but got {}".format(p))
+            raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
         self.p = p
         self.inplace = inplace
 
@@ -150,9 +143,7 @@ class Dropout3d(Module):
 
     def __repr__(self):
         inplace_str = ', inplace' if self.inplace else ''
-        return self.__class__.__name__ + ' (' \
-            + 'p=' + str(self.p) \
-            + inplace_str + ')'
+        return f'{self.__class__.__name__} (p={str(self.p)}{inplace_str})'
 
 
 class AlphaDropout(Module):
@@ -194,13 +185,11 @@ class AlphaDropout(Module):
     def __init__(self, p=0.5):
         super(AlphaDropout, self).__init__()
         if p < 0 or p > 1:
-            raise ValueError("dropout probability has to be between 0 and 1, "
-                             "but got {}".format(p))
+            raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
         self.p = p
 
     def forward(self, input):
         return F.alpha_dropout(input, self.p, self.training)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' \
-            + 'p = ' + str(self.p) + ')'
+        return f'{self.__class__.__name__} (p = {str(self.p)})'

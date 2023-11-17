@@ -48,8 +48,5 @@ class VolumetricReplicationPadding(Module):
 
     def __repr__(self):
         s = super(VolumetricReplicationPadding, self).__repr__()
-        s += '({}, {}, {}, {}, {}, {})'.format(self.pleft, self.pright,
-                                               self.ptop, self.pbottom,
-                                               self.pfront, self.pback
-                                               )
+        s += f'({self.pleft}, {self.pright}, {self.ptop}, {self.pbottom}, {self.pfront}, {self.pback})'
         return s

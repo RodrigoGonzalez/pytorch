@@ -19,4 +19,4 @@ class Unsqueeze(Module):
         return self.gradInput
 
     def __repr__(self):
-        return super(Unsqueeze, self).__repr__() + '({})'.format(self.dim)
+        return f'{super(Unsqueeze, self).__repr__()}({self.dim})'

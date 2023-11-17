@@ -24,12 +24,11 @@ class SelectTable(Module):
                     l1[i] = self._zeroTableCopy(l1[i], l2[i])
                 else:
                     l1.append(self._zeroTableCopy([], l2[i]))
+            elif i >= len(l1):
+                l1.append(v.new().resize_as_(v).zero_())
             else:
-                if i >= len(l1):
-                    l1.append(v.new().resize_as_(v).zero_())
-                else:
-                    l1[i].resize_as_(v)
-                    l1[i].zero_()
+                l1[i].resize_as_(v)
+                l1[i].zero_()
         del l1[len(l2):]
         return l1
 
@@ -50,4 +49,4 @@ class SelectTable(Module):
         return super(SelectTable, self).type(type, tensorCache)
 
     def __repr__(self):
-        return super(SelectTable, self).__repr__() + '({})'.format(self.index)
+        return f'{super(SelectTable, self).__repr__()}({self.index})'

@@ -21,7 +21,7 @@ def recursiveType(param, type, tensorCache={}):
     if isinstance(param, list):
         for i, p in enumerate(param):
             param[i] = recursiveType(p, type, tensorCache)
-    elif isinstance(param, Module) or isinstance(param, Criterion):
+    elif isinstance(param, (Module, Criterion)):
         param.type(type, tensorCache)
     elif torch.is_tensor(param):
         if torch.typename(param) != type:
@@ -31,8 +31,7 @@ def recursiveType(param, type, tensorCache={}):
             else:
                 newparam = torch.Tensor().type(type)
                 storageType = type.replace('Tensor', 'Storage')
-                param_storage = param.storage()
-                if param_storage:
+                if param_storage := param.storage():
                     storage_key = param_storage._cdata
                     if storage_key not in tensorCache:
                         tensorCache[storage_key] = torch._import_dotted_name(

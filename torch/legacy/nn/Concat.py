@@ -35,11 +35,12 @@ class Concat(Container):
         offset = 0
         for i, module in enumerate(self.modules):
             currentOutput = module.output
-            currentGradInput = module.updateGradInput(input, gradOutput.narrow(
-                self.dimension, offset, currentOutput.size(self.dimension)))
-
-            # if the module does not produce a gradInput (for example first layer),: ignore it and move on.
-            if currentGradInput:
+            if currentGradInput := module.updateGradInput(
+                input,
+                gradOutput.narrow(
+                    self.dimension, offset, currentOutput.size(self.dimension)
+                ),
+            ):
                 if i == 0:
                     self.gradInput.copy_(currentGradInput)
                 else:
@@ -51,7 +52,7 @@ class Concat(Container):
 
     def accGradParameters(self, input, gradOutput, scale=1):
         offset = 0
-        for i, module in enumerate(self.modules):
+        for module in self.modules:
             currentOutput = module.output
             module.accGradParameters(
                 input,
@@ -78,7 +79,7 @@ class Concat(Container):
 
     def accUpdateGradParameters(self, input, gradOutput, lr):
         offset = 0
-        for i, module in enumerate(self.modules):
+        for module in self.modules:
             currentOutput = module.output
             module.accUpdateGradParameters(
                 input,

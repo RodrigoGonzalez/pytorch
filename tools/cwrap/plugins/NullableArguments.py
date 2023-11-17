@@ -5,10 +5,10 @@ class NullableArguments(CWrapPlugin):
 
     def process_single_check(self, code, arg, arg_accessor):
         if 'nullable' in arg and arg['nullable']:
-            return '({} || {} == Py_None)'.format(code, arg_accessor)
+            return f'({code} || {arg_accessor} == Py_None)'
         return code
 
     def process_single_unpack(self, code, arg, arg_accessor):
         if 'nullable' in arg and arg['nullable']:
-            return '({} == Py_None ? NULL : {})'.format(arg_accessor, code)
+            return f'({arg_accessor} == Py_None ? NULL : {code})'
         return code

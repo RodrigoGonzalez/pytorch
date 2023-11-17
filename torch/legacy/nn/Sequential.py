@@ -32,7 +32,7 @@ class Sequential(Container):
 
     def updateOutput(self, input):
         currentOutput = input
-        for i, module in enumerate(self.modules):
+        for module in self.modules:
             currentOutput = module.updateOutput(currentOutput)
         self.output = currentOutput
         return self.output

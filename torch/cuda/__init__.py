@@ -79,8 +79,7 @@ def _lazy_init():
         else:
             msg = ("To use CUDA with multiprocessing, you must use the "
                    "'spawn' start method")
-        raise RuntimeError(
-            "Cannot re-initialize CUDA in forked subprocess. " + msg)
+        raise RuntimeError(f"Cannot re-initialize CUDA in forked subprocess. {msg}")
     _check_driver()
     torch._C._cuda_init()
     torch._C._cuda_sparse_init()
@@ -186,11 +185,10 @@ def stream(stream):
 
 def device_count():
     """Returns the number of GPUs available."""
-    if is_available():
-        _lazy_init()
-        return torch._C._cuda_getDeviceCount()
-    else:
+    if not is_available():
         return 0
+    _lazy_init()
+    return torch._C._cuda_getDeviceCount()
 
 
 def current_device():

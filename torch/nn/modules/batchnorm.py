@@ -33,8 +33,9 @@ class _BatchNorm(Module):
 
     def _check_input_dim(self, input):
         if input.size(1) != self.running_mean.nelement():
-            raise ValueError('got {}-feature tensor, expected {}'
-                             .format(input.size(1), self.num_features))
+            raise ValueError(
+                f'got {input.size(1)}-feature tensor, expected {self.num_features}'
+            )
 
     def forward(self, input):
         self._check_input_dim(input)
@@ -84,9 +85,8 @@ class BatchNorm1d(_BatchNorm):
     """
 
     def _check_input_dim(self, input):
-        if input.dim() != 2 and input.dim() != 3:
-            raise ValueError('expected 2D or 3D input (got {}D input)'
-                             .format(input.dim()))
+        if input.dim() not in [2, 3]:
+            raise ValueError(f'expected 2D or 3D input (got {input.dim()}D input)')
         super(BatchNorm1d, self)._check_input_dim(input)
 
 
@@ -127,8 +127,7 @@ class BatchNorm2d(_BatchNorm):
 
     def _check_input_dim(self, input):
         if input.dim() != 4:
-            raise ValueError('expected 4D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 4D input (got {input.dim()}D input)')
         super(BatchNorm2d, self)._check_input_dim(input)
 
 
@@ -169,6 +168,5 @@ class BatchNorm3d(_BatchNorm):
 
     def _check_input_dim(self, input):
         if input.dim() != 5:
-            raise ValueError('expected 5D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 5D input (got {input.dim()}D input)')
         super(BatchNorm3d, self)._check_input_dim(input)

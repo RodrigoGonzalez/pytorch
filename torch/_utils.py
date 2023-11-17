@@ -16,7 +16,7 @@ def _type(self, new_type=None, async=False):
                       Otherwise, the argument has no effect.
     """
     if new_type is None:
-        return self.__module__ + '.' + self.__class__.__name__
+        return f'{self.__module__}.{self.__class__.__name__}'
 
     if isinstance(new_type, str):
         new_type = _import_dotted_name(new_type)
@@ -25,7 +25,7 @@ def _type(self, new_type=None, async=False):
     if self.is_sparse:
         if not new_type.is_sparse:
             raise RuntimeError("Cannot cast sparse tensor to dense tensor")
-        new_type_name = new_type.__module__ + '.' + new_type.__name__
+        new_type_name = f'{new_type.__module__}.{new_type.__name__}'
         new_values_type_name = new_type_name.replace('.sparse', '')
         new_values = self._values().type(new_values_type_name, async)
         return new_type(self._indices(), new_values, self.size())
@@ -51,9 +51,8 @@ def _cuda(self, device=None, async=False):
             device = torch.cuda.current_device()
         if self.get_device() == device:
             return self
-    else:
-        if device is None:
-            device = -1
+    elif device is None:
+        device = -1
     with torch.cuda.device(device):
         if self.is_sparse:
             new_type = getattr(torch.cuda.sparse, self.__class__.__name__)

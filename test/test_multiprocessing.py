@@ -124,7 +124,7 @@ class leak_checker(object):
 
     def _get_next_fds(self, n=1):
         # dup uses the lowest-numbered unused descriptor for the new descriptor
-        fds = [os.dup(0) for i in range(n)]
+        fds = [os.dup(0) for _ in range(n)]
         for fd in fds:
             os.close(fd)
         return fds
@@ -140,7 +140,7 @@ class leak_checker(object):
 
     def _has_shm_files(self):
         gc.collect()
-        names = list('torch_' + str(pid) for pid in self.checked_pids)
+        names = [f'torch_{str(pid)}' for pid in self.checked_pids]
         for filename in os.listdir('/dev/shm'):
             for name in names:
                 if filename.startswith(name):
@@ -306,9 +306,7 @@ class TestMultiprocessing(TestCase):
         p = ctx.Process(target=sum_tensors, args=(inq, outq))
         p.start()
 
-        results = []
-        for i in range(5):
-            results.append(outq.get())
+        results = [outq.get() for _ in range(5)]
         p.join()
 
         for i, tensor in enumerate(tensors):

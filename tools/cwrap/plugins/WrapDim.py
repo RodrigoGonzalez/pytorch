@@ -25,16 +25,14 @@ class WrapDim(CWrapPlugin):
             params = arg.get('wrap_dim').split("+")
             arg_tensor = params[0]
 
-            arg_tensor = "arg_" + arg_tensor
+            arg_tensor = f"arg_{arg_tensor}"
             arg_dim = "arg_" + arg.get('assign_name', arg['name'])
 
             params[0] = self.NDIM_TEMPLATE.substitute(arg_tensor=arg_tensor)
             ndim = "+".join(params)
 
-            new_code.append(self.CODE_TEMPLATE.substitute(
-                arg_dim=arg_dim,
-                ndim=ndim))
-            new_code.append("")
-
+            new_code.extend(
+                (self.CODE_TEMPLATE.substitute(arg_dim=arg_dim, ndim=ndim), "")
+            )
         template = new_code + template
         return template

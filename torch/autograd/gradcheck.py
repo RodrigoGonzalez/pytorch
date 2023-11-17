@@ -9,8 +9,7 @@ def iter_gradients(x):
             yield x.grad.data if x.grad is not None else None
     elif isinstance(x, Iterable):
         for elem in x:
-            for result in iter_gradients(elem):
-                yield result
+            yield from iter_gradients(elem)
 
 
 def zero_gradients(x):
@@ -31,9 +30,7 @@ def make_jacobian(input, num_out):
     elif isinstance(input, Iterable):
         jacobians = list(filter(
             lambda x: x is not None, (make_jacobian(elem, num_out) for elem in input)))
-        if not jacobians:
-            return None
-        return type(input)(jacobians)
+        return None if not jacobians else type(input)(jacobians)
     else:
         return None
 
@@ -46,8 +43,7 @@ def iter_tensors(x, only_requiring_grad=False):
             yield x.data
     elif isinstance(x, Iterable):
         for elem in x:
-            for result in iter_tensors(elem, only_requiring_grad):
-                yield result
+            yield from iter_tensors(elem, only_requiring_grad)
 
 
 def contiguous(input):
@@ -69,8 +65,8 @@ def get_numerical_jacobian(fn, input, target, eps=1e-3):
     # It's much easier to iterate over flattened lists of tensors.
     # These are reference to the same objects in jacobian, so any changes
     # will be reflected in it as well.
-    x_tensors = [t for t in iter_tensors(target, True)]
-    j_tensors = [t for t in iter_tensors(jacobian)]
+    x_tensors = list(iter_tensors(target, True))
+    j_tensors = list(iter_tensors(jacobian))
 
     outa = torch.DoubleTensor(output_size)
     outb = torch.DoubleTensor(output_size)

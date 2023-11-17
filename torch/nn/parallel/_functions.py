@@ -12,12 +12,12 @@ class Broadcast(Function):
     def forward(self, *inputs):
         if not all(input.is_cuda for input in inputs):
             raise TypeError('Broadcast function not implemented for CPU tensors')
-        if len(inputs) == 0:
+        if not inputs:
             return tuple()
         self.num_inputs = len(inputs)
         self.input_device = inputs[0].get_device()
         outputs = comm.broadcast_coalesced(inputs, self.target_gpus)
-        return tuple([t for tensors in outputs for t in tensors])
+        return tuple(t for tensors in outputs for t in tensors)
 
     def backward(self, *grad_outputs):
         grad_outputs = [grad_outputs[i:i + self.num_inputs]

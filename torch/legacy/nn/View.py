@@ -40,4 +40,4 @@ class View(Module):
         return self.gradInput
 
     def __repr__(self):
-        return super(View, self).__repr__() + '({})'.format(', '.join(map(str, self.size)))
+        return f"{super(View, self).__repr__()}({', '.join(map(str, self.size))})"

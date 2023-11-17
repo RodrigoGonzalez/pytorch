@@ -70,7 +70,7 @@ def typename(o):
     class_name = ''
     if hasattr(o, '__module__') and o.__module__ != 'builtins' \
             and o.__module__ != '__builtin__' and o.__module__ is not None:
-        module = o.__module__ + '.'
+        module = f'{o.__module__}.'
 
     if hasattr(o, '__qualname__'):
         class_name = o.__qualname__
@@ -294,7 +294,7 @@ def manager_path():
     import os
     path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'lib', 'torch_shm_manager')
     if not os.path.exists(path):
-        raise RuntimeError("Unable to find torch_shm_manager at " + path)
+        raise RuntimeError(f"Unable to find torch_shm_manager at {path}")
     return path.encode('utf-8')
 
 

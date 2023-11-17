@@ -20,7 +20,7 @@ class AssertNDim(CWrapPlugin):
 
             dim_value = arg.get('assert_ndim')
             op = arg.get('assign_name', arg['name'])
-            arg_op = "arg_" + op
+            arg_op = f"arg_{op}"
             new_code_pre.append(self.PRE_CODE_TEMPLATE.substitute(op=op,
                                                                   arg_op=arg_op,
                                                                   dim_value=dim_value))

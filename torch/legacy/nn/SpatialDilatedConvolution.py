@@ -73,14 +73,14 @@ class SpatialDilatedConvolution(SpatialConvolution):
 
     def __repr__(self):
         s = super(SpatialConvolution, self).__repr__()
-        s += '({} -> {}, {}x{}'.format(self.nInputPlane, self.nOutputPlane, self.kW, self.kH)
+        s += f'({self.nInputPlane} -> {self.nOutputPlane}, {self.kW}x{self.kH}'
         if self.dW != 1 or self.dH != 1 or self.padW != 0 or self.padH != 0:
-            s += ', {}, {}'.format(self.dW, self.dH)
+            s += f', {self.dW}, {self.dH}'
 
         if self.padW != 0 or self.padH != 0:
-            s += ', {}, {}'.format(self.padW, self.padH)
+            s += f', {self.padW}, {self.padH}'
 
-        s += ', {}, {}'.format(self.dilationW, self.dilationH)
+        s += f', {self.dilationW}, {self.dilationH}'
 
         s += ')'
         if self.bias is None:

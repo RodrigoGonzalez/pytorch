@@ -53,7 +53,7 @@ def _cpu_tag(obj):
 
 def _cuda_tag(obj):
     if type(obj).__module__ == 'torch.cuda':
-        return 'cuda:' + str(obj.get_device())
+        return f'cuda:{str(obj.get_device())}'
 
 
 def _cpu_deserialize(obj, location):
@@ -73,8 +73,7 @@ register_package(20, _cuda_tag, _cuda_deserialize)
 
 def location_tag(storage):
     for _, tagger, _ in _package_registry:
-        location = tagger(storage)
-        if location:
+        if location := tagger(storage):
             return location
     raise RuntimeError("don't know how to determine data location of " +
                        torch.typename(storage))
@@ -154,11 +153,7 @@ def _save(obj, f, pickle_module, pickle_protocol):
             location = location_tag(obj)
             serialized_storages[root_key] = root
             is_view = obj._cdata != root._cdata
-            if is_view:
-                view_metadata = (str(obj._cdata), offset, obj.size())
-            else:
-                view_metadata = None
-
+            view_metadata = (str(obj._cdata), offset, obj.size()) if is_view else None
             return ('storage',
                     storage_type,
                     root_key,
@@ -252,7 +247,7 @@ def _load(f, map_location, pickle_module):
         current_source = inspect.getsource(container_type)
         if original_source != current_source:
             if container_type.dump_patches:
-                file_name = container_type.__name__ + '.patch'
+                file_name = f'{container_type.__name__}.patch'
                 diff = difflib.unified_diff(current_source.split('\n'),
                                             original_source.split('\n'),
                                             source_file,
@@ -266,9 +261,13 @@ def _load(f, map_location, pickle_module):
                             f.write(lines)
                         elif file_size != len(lines) or f.read() != lines:
                             raise IOError
-                    msg = ("Saved a reverse patch to " + file_name + ". "
-                           "Run `patch -p0 < " + file_name + "` to revert your "
-                           "changes.")
+                    msg = (
+                        (
+                            f"Saved a reverse patch to {file_name}" + ". "
+                            "Run `patch -p0 < "
+                        )
+                        + file_name
+                    ) + "` to revert your " "changes."
                 except IOError:
                     msg = ("Tried to save a patch, but couldn't create a "
                            "writable file " + file_name + ". Make sure it "
@@ -355,7 +354,7 @@ def _load(f, map_location, pickle_module):
             else:
                 return storage
         else:
-            raise RuntimeError("Unknown saved id type: %s" % saved_id[0])
+            raise RuntimeError(f"Unknown saved id type: {saved_id[0]}")
 
     # try the legacy loader first, which only works if f is a tarfile
     try:
@@ -369,7 +368,7 @@ def _load(f, map_location, pickle_module):
         raise RuntimeError("Invalid magic number; corrupt file?")
     protocol_version = pickle_module.load(f)
     if protocol_version != PROTOCOL_VERSION:
-        raise RuntimeError("Invalid protocol version: %s" % protocol_version)
+        raise RuntimeError(f"Invalid protocol version: {protocol_version}")
 
     _sys_info = pickle_module.load(f)
     unpickler = pickle_module.Unpickler(f)

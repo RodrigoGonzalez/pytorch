@@ -63,7 +63,7 @@ class KwargsPlugin(CWrapPlugin):
                         name not in seen_args):
                     seen_args.add(name)
                     args.append(name)
-        declarations = '\n    '.join(['PyObject *__kw_{} = NULL;'.format(a) for a in args])
+        declarations = '\n    '.join([f'PyObject *__kw_{a} = NULL;' for a in args])
         lookups = '\n      '.join(
             ['__kw_{name} = PyDict_GetItemString(kwargs, "{name}");'.format(name=a) for a in args])
         start_idx = code.find('{') + 1

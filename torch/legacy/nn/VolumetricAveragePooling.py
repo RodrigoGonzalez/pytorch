@@ -36,6 +36,6 @@ class VolumetricAveragePooling(Module):
 
     def __repr__(self):
         s = super(VolumetricAveragePooling, self).__repr__()
-        s += '({}x{}x{}, {}, {}, {}'.format(self.kT, self.kW, self.kH, self.dT, self.dW, self.dH)
+        s += f'({self.kT}x{self.kW}x{self.kH}, {self.dT}, {self.dW}, {self.dH}'
         s += ')'
         return s

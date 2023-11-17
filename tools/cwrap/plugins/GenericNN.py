@@ -75,8 +75,7 @@ void $name($args)
 
     def process_full_file(self, base_wrapper):
         if self.header:
-            wrapper = '#pragma once\n\n'
-            wrapper += '#include <THPP/Tensor.hpp>\n\n'
+            wrapper = '#pragma once\n\n' + '#include <THPP/Tensor.hpp>\n\n'
         else:
             wrapper = '#include "THNN_generic.h"\n'
             wrapper = '#include "THNN_generic.inc.h"\n\n'
@@ -200,8 +199,8 @@ void $name($args)
                     name = arg.get('assign_name', arg['name'])
                     name_str = name
                     if arg.get('optional', False):
-                        name_str = '?' + name_str
-                    checked_args += ['"' + name_str + '"', name]
+                        name_str = f'?{name_str}'
+                    checked_args += [f'"{name_str}"', name]
             checked_args += ['NULL']
             return checked_args
 

@@ -36,14 +36,14 @@ def backward_engine(engine):
 def graph_desc(fn):
     if fn is None:
         return 'None'
-    result = type(fn).__name__ + '('
+    result = f'{type(fn).__name__}('
     next_functions = fn.next_functions
     for next_fn, _ in next_functions:
         result += graph_desc(next_fn)
         result += ', '
     if next_functions:
         result = result[:-2]
-    return result + ')'
+    return f'{result})'
 
 
 class TestAutograd(TestCase):
@@ -826,7 +826,7 @@ class TestAutograd(TestCase):
             def __del__(self):
                 gc.collect()
 
-        for i in range(10):
+        for _ in range(10):
             Variable(torch.randn(10, 10), _grad_fn=CollectOnDelete())
 
     @unittest.skipIf(not torch.cuda.is_available() or torch.cuda.device_count() < 2,
@@ -1009,7 +1009,7 @@ class TestAutograd(TestCase):
         add1 = a + b
         add2 = add1 + c
         # Simulate a long branch, so grad_output will get buffered.
-        for i in range(4):
+        for _ in range(4):
             a = a * 2
             b = b * 2
             c = c * 2
@@ -1626,7 +1626,7 @@ def create_input(call_args, requires_grad=True):
         call_args = (call_args,)
 
     def map_arg(arg):
-        if isinstance(arg, torch.Size) or isinstance(arg, dont_convert):
+        if isinstance(arg, (torch.Size, dont_convert)):
             return arg
         elif isinstance(arg, tuple) and not isinstance(arg[0], Variable):
             return Variable(torch.randn(*arg).double(), requires_grad=requires_grad)
@@ -1637,6 +1637,7 @@ def create_input(call_args, requires_grad=True):
                 return Variable(arg, requires_grad=requires_grad)
         else:
             return arg
+
     return tuple(map_arg(arg) for arg in call_args)
 
 
@@ -1649,9 +1650,7 @@ def unpack_variables(args):
         return args
 
 
-ignore_inplace = set((
-    'test_DivConstantFunction_by_tensor',
-))
+ignore_inplace = {'test_DivConstantFunction_by_tensor'}
 
 
 for test in function_tests:
@@ -1796,7 +1795,7 @@ for test in method_tests:
                         self.assertTrue(type(self_variable.data) == type(self_variable.grad.data))
 
             check(name)
-            inplace_name = name + '_'
+            inplace_name = f'{name}_'
             if hasattr(Variable(torch.ones(1)), inplace_name):
                 try:
                     check(inplace_name)

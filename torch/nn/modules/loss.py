@@ -425,7 +425,7 @@ class MultiMarginLoss(Module):
 
     def __init__(self, p=1, margin=1, weight=None, size_average=True):
         super(MultiMarginLoss, self).__init__()
-        if p != 1 and p != 2:
+        if p not in [1, 2]:
             raise ValueError("only p == 1 and p == 2 supported")
         assert weight is None or weight.dim() == 1
         self.p = p

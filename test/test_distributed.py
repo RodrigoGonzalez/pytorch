@@ -81,13 +81,10 @@ class _DistTestBase(object):
         group = [1, 2]
         group_id = dist.new_group(group)
         rank = dist.get_rank()
-        if rank not in group:
-            return ([], None, rank)
-
-        return (group, group_id, rank)
+        return ([], None, rank) if rank not in group else (group, group_id, rank)
 
     def _init_global_test(self):
-        group = [i for i in range(0, dist.get_world_size())]
+        group = list(range(0, dist.get_world_size()))
         group_id = dist.group.WORLD
         rank = dist.get_rank()
         return (group, group_id, rank)
@@ -307,17 +304,12 @@ class _DistTestBase(object):
         for src in group:
             if rank == src:
                 tensor = _build_tensor(src + 1).fill_(master_value)
-                if cuda:
-                    tensor = tensor.cuda()
-                dist.all_reduce(tensor, op, group_id)
-                self.assertEqual(tensor, _build_tensor(src + 1, expected_value))
             else:
                 tensor = _build_tensor(src + 1).fill_(worker_value)
-                if cuda:
-                    tensor = tensor.cuda()
-                dist.all_reduce(tensor, op, group_id)
-                self.assertEqual(tensor, _build_tensor(src + 1, expected_value))
-
+            if cuda:
+                tensor = tensor.cuda()
+            dist.all_reduce(tensor, op, group_id)
+            self.assertEqual(tensor, _build_tensor(src + 1, expected_value))
         self._barrier()
 
     def test_all_reduce_sum(self):
@@ -385,11 +377,9 @@ class _DistTestBase(object):
             if rank == dest:
                 tensors = [_build_tensor(dest + 1, i) for i in group]
                 dist.scatter_send(tensors, tensor, group_id)
-                self.assertEqual(tensor, expected_tensor)
             else:
                 dist.scatter_recv(tensor, dest, group_id)
-                self.assertEqual(tensor, expected_tensor)
-
+            self.assertEqual(tensor, expected_tensor)
         self._barrier()
 
     @unittest.skipIf(BACKEND == 'gloo', "Gloo does not support scatter")
@@ -407,7 +397,7 @@ class _DistTestBase(object):
         for dest in group:
             tensor = _build_tensor(dest + 1, rank)
             if rank == dest:
-                tensors = [_build_tensor(dest + 1, -1) for i in group]
+                tensors = [_build_tensor(dest + 1, -1) for _ in group]
                 dist.gather_recv(tensors, tensor, group_id)
 
                 expected_tensors = [_build_tensor(dest + 1, i) for i in group]
@@ -432,7 +422,7 @@ class _DistTestBase(object):
     def _test_all_gather_helper(self, group, group_id, rank):
         for dest in group:
             tensor = _build_tensor(dest + 1, rank)
-            tensors = [_build_tensor(dest + 1, -1) for i in group]
+            tensors = [_build_tensor(dest + 1, -1) for _ in group]
             dist.all_gather(tensors, tensor, group_id)
 
             expected_tensors = [_build_tensor(dest + 1, i) for i in group]
@@ -507,8 +497,9 @@ if BACKEND == 'tcp' or BACKEND == 'gloo':
             self.processes = []
             self.rank = self.MANAGER_PROCESS_RANK
             Barrier.init()
-            for rank in range(int(WORLD_SIZE)):
-                self.processes.append(self._spawn_process(rank))
+            self.processes.extend(
+                self._spawn_process(rank) for rank in range(int(WORLD_SIZE))
+            )
 
         def tearDown(self):
             for p in self.processes:
@@ -516,7 +507,7 @@ if BACKEND == 'tcp' or BACKEND == 'gloo':
 
         def _spawn_process(self, rank):
             os.environ['RANK'] = str(rank)
-            name = 'process ' + str(rank)
+            name = f'process {str(rank)}'
             process = multiprocessing.Process(target=self._run, name=name,
                                               args=(rank,))
             process.start()

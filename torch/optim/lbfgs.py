@@ -188,11 +188,7 @@ class LBFGS(Optimizer):
             # compute step length
             ############################################################
             # reset initial guess for step size
-            if state['n_iter'] == 1:
-                t = min(1., 1. / abs_grad_sum) * lr
-            else:
-                t = lr
-
+            t = min(1., 1. / abs_grad_sum) * lr if state['n_iter'] == 1 else lr
             # directional derivative
             gtd = flat_grad.dot(d)  # g * d
 
@@ -201,17 +197,16 @@ class LBFGS(Optimizer):
             if line_search_fn is not None:
                 # perform line search, using user function
                 raise RuntimeError("line search function is not supported yet")
-            else:
-                # no line search, simply move with fixed-step
-                self._add_grad(t, d)
-                if n_iter != max_iter:
-                    # re-evaluate function only if not in last iteration
-                    # the reason we do this: in a stochastic setting,
-                    # no use to re-evaluate that function here
-                    loss = closure().data[0]
-                    flat_grad = self._gather_flat_grad()
-                    abs_grad_sum = flat_grad.abs().sum()
-                    ls_func_evals = 1
+            # no line search, simply move with fixed-step
+            self._add_grad(t, d)
+            if n_iter != max_iter:
+                # re-evaluate function only if not in last iteration
+                # the reason we do this: in a stochastic setting,
+                # no use to re-evaluate that function here
+                loss = closure().data[0]
+                flat_grad = self._gather_flat_grad()
+                abs_grad_sum = flat_grad.abs().sum()
+                ls_func_evals = 1
 
             # update func eval
             current_evals += ls_func_evals

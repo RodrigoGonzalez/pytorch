@@ -192,15 +192,15 @@ class EmbeddingBag(Module):
     def forward(self, input, offsets=None):
         if input.dim() == 2:
             if offsets is not None:
-                raise ValueError("if input is 2D, then offsets has to be None"
-                                 ", as input is treated is a mini-batch of"
-                                 " fixed length sequences. However, found "
-                                 "offsets of type {}".format(type(offsets)))
+                raise ValueError(
+                    f"if input is 2D, then offsets has to be None, as input is treated is a mini-batch of fixed length sequences. However, found offsets of type {type(offsets)}"
+                )
             else:
                 offsets = input.new(input.size(0)).fill_(input.size(1))
         elif input.dim() != 1:
-            raise ValueError("input has to be 1D or 2D Tensor,"
-                             " but got Tensor of dimension {}".format(input.dim()))
+            raise ValueError(
+                f"input has to be 1D or 2D Tensor, but got Tensor of dimension {input.dim()}"
+            )
         if offsets is None:
             raise ValueError("offsets has to be a 1D Tensor but got None")
 

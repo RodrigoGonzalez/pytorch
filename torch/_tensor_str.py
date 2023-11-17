@@ -81,24 +81,11 @@ def _number_format(tensor, min_sz=-1):
     if invalid_value_mask.any():
         min_sz = max(min_sz, 3)
 
-    int_mode = True
-    # TODO: use fmod?
-    for value in tensor:
-        if value != math.ceil(value):
-            int_mode = False
-            break
-
+    int_mode = all(value == math.ceil(value) for value in tensor)
     exp_min = tensor.min()
-    if exp_min != 0:
-        exp_min = math.floor(math.log10(exp_min)) + 1
-    else:
-        exp_min = 1
+    exp_min = math.floor(math.log10(exp_min)) + 1 if exp_min != 0 else 1
     exp_max = tensor.max()
-    if exp_max != 0:
-        exp_max = math.floor(math.log10(exp_max)) + 1
-    else:
-        exp_max = 1
-
+    exp_max = math.floor(math.log10(exp_max)) + 1 if exp_max != 0 else 1
     scale = 1
     exp_max = int(exp_max)
     prec = PRINT_OPTS.precision
@@ -109,24 +96,20 @@ def _number_format(tensor, min_sz=-1):
         else:
             sz = max(min_sz, exp_max + 1)
             format = '{:' + str(sz) + '.0f}'
+    elif exp_max - exp_min > prec:
+        sz = 7 + prec
+        if abs(exp_max) > 99 or abs(exp_min) > 99:
+            sz = sz + 1
+        sz = max(min_sz, sz)
+        format = '{{:{}.{}e}}'.format(sz, prec)
     else:
-        if exp_max - exp_min > prec:
-            sz = 7 + prec
-            if abs(exp_max) > 99 or abs(exp_min) > 99:
-                sz = sz + 1
-            sz = max(min_sz, sz)
-            format = '{{:{}.{}e}}'.format(sz, prec)
+        if exp_max > prec + 1 or exp_max < 0:
+            sz = max(min_sz, 7)
+            scale = math.pow(10, exp_max - 1)
         else:
-            if exp_max > prec + 1 or exp_max < 0:
-                sz = max(min_sz, 7)
-                scale = math.pow(10, exp_max - 1)
-            else:
-                if exp_max == 0:
-                    sz = 7
-                else:
-                    sz = exp_max + 6
-                sz = max(min_sz, sz)
-            format = '{{:{}.{}f}}'.format(sz, prec)
+            sz = 7 if exp_max == 0 else exp_max + 6
+            sz = max(min_sz, sz)
+        format = '{{:{}.{}f}}'.format(sz, prec)
     return format, scale, sz
 
 
@@ -148,20 +131,19 @@ def _tensor_str(self):
     finished = False
     strt = ''
     while True:
-        nrestarted = [False for i in counter]
-        nskipped = [False for i in counter]
+        nrestarted = [False for _ in counter]
+        nskipped = [False for _ in counter]
         for i in _range(counter_dim - 1, -1, -1):
             counter[i] += 1
             if print_dots and counter[i] == n and self.size(i) > 2 * n:
                 counter[i] = self.size(i) - n
                 nskipped[i] = True
-            if counter[i] == self.size(i):
-                if i == 0:
-                    finished = True
-                counter[i] = 0
-                nrestarted[i] = True
-            else:
+            if counter[i] != self.size(i):
                 break
+            if i == 0:
+                finished = True
+            counter[i] = 0
+            nrestarted[i] = True
         if finished:
             break
         elif print_dots:
@@ -177,8 +159,7 @@ def _tensor_str(self):
                 strt += '\n'
         if strt != '':
             strt += '\n'
-        strt += '({},.,.) = \n'.format(
-            ','.join(dim_fmt.format(i) for i in counter))
+        strt += f"({','.join(dim_fmt.format(i) for i in counter)},.,.) = \n"
         submatrix = reduce(lambda t, i: t.select(0, i), counter, self)
         strt += _matrix_str(submatrix, ' ', formatter, print_dots)
     return strt
@@ -217,8 +198,7 @@ def _matrix_str(self, indent='', formatter=None, force_truncate=False):
             lastColumn = min(firstColumn + nColumnPerLine - 1, self.size(1) - 1)
             if nColumnPerLine < self.size(1):
                 strt += '\n' if firstColumn != 1 else ''
-                strt += 'Columns {} to {} \n{}'.format(
-                    firstColumn, lastColumn, indent)
+                strt += f'Columns {firstColumn} to {lastColumn} \n{indent}'
             if scale != 1:
                 strt += SCALE_FORMAT.format(scale)
             for l in _range(self.size(0)):
@@ -243,7 +223,7 @@ def _matrix_str(self, indent='', formatter=None, force_truncate=False):
         elif not has_vdots and has_hdots:
             for row in self:
                 strt += __repr_row(row, indent, fmt, scale, sz, n)
-        elif has_vdots and not has_hdots:
+        elif has_vdots:
             vdotfmt = u"{:^" + \
                 str(len(__repr_row(self[0], '', fmt, scale, sz))) + \
                 "}\n"
@@ -281,7 +261,7 @@ def _vector_str(self):
 
 def _str(self):
     if self.ndimension() == 0:
-        return '[{} with no dimension]\n'.format(torch.typename(self))
+        return f'[{torch.typename(self)} with no dimension]\n'
     elif self.ndimension() == 1:
         strt = _vector_str(self)
     elif self.ndimension() == 2:
@@ -290,8 +270,6 @@ def _str(self):
         strt = _tensor_str(self)
 
     size_str = 'x'.join(str(size) for size in self.size())
-    device_str = '' if not self.is_cuda else \
-        ' (GPU {})'.format(self.get_device())
-    strt += '[{} of size {}{}]\n'.format(torch.typename(self),
-                                         size_str, device_str)
+    device_str = '' if not self.is_cuda else f' (GPU {self.get_device()})'
+    strt += f'[{torch.typename(self)} of size {size_str}{device_str}]\n'
     return '\n' + strt

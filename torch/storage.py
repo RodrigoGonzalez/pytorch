@@ -8,7 +8,7 @@ class _StorageBase(object):
 
     def __str__(self):
         content = ' ' + '\n '.join(str(self[i]) for i in _range(len(self)))
-        return content + '\n[{} of size {}]'.format(torch.typename(self), len(self))
+        return f'{content}\n[{torch.typename(self)} of size {len(self)}]'
 
     def __repr__(self):
         return str(self)
@@ -36,7 +36,7 @@ class _StorageBase(object):
 
     def tolist(self):
         """Returns a list containing the elements of this storage"""
-        return [v for v in self]
+        return list(self)
 
     def cpu(self):
         """Returns a CPU copy of this storage if it's not already on the CPU"""
@@ -44,35 +44,35 @@ class _StorageBase(object):
 
     def double(self):
         """Casts this storage to double type"""
-        return self.type(type(self).__module__ + '.DoubleStorage')
+        return self.type(f'{type(self).__module__}.DoubleStorage')
 
     def float(self):
         """Casts this storage to float type"""
-        return self.type(type(self).__module__ + '.FloatStorage')
+        return self.type(f'{type(self).__module__}.FloatStorage')
 
     def half(self):
         """Casts this storage to half type"""
-        return self.type(type(self).__module__ + '.HalfStorage')
+        return self.type(f'{type(self).__module__}.HalfStorage')
 
     def long(self):
         """Casts this storage to long type"""
-        return self.type(type(self).__module__ + '.LongStorage')
+        return self.type(f'{type(self).__module__}.LongStorage')
 
     def int(self):
         """Casts this storage to int type"""
-        return self.type(type(self).__module__ + '.IntStorage')
+        return self.type(f'{type(self).__module__}.IntStorage')
 
     def short(self):
         """Casts this storage to short type"""
-        return self.type(type(self).__module__ + '.ShortStorage')
+        return self.type(f'{type(self).__module__}.ShortStorage')
 
     def char(self):
         """Casts this storage to char type"""
-        return self.type(type(self).__module__ + '.CharStorage')
+        return self.type(f'{type(self).__module__}.CharStorage')
 
     def byte(self):
         """Casts this storage to byte type"""
-        return self.type(type(self).__module__ + '.ByteStorage')
+        return self.type(f'{type(self).__module__}.ByteStorage')
 
     def pin_memory(self):
         """Copies the storage to pinned memory, if it's not already pinned."""

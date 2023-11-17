@@ -11,22 +11,18 @@ class Sum(Function):
         ctx.dim = dim
         ctx.keepdim = keepdim
         ctx.input_size = input.size()
-        if dim is None:
-            return input.new((input.sum(),))
-        else:
-            return input.sum(dim, keepdim)
+        return input.new((input.sum(),)) if dim is None else input.sum(dim, keepdim)
 
     @staticmethod
     def backward(ctx, grad_output):
         if ctx.dim is None:
             return grad_output.expand(ctx.input_size), None, None
-        else:
-            if ctx.keepdim is False:
-                grad_output = grad_output.unsqueeze(ctx.dim)
+        if ctx.keepdim is False:
+            grad_output = grad_output.unsqueeze(ctx.dim)
 
-            repeats = [1 for _ in ctx.input_size]
-            repeats[ctx.dim] = ctx.input_size[ctx.dim]
-            return grad_output.repeat(*repeats), None, None
+        repeats = [1 for _ in ctx.input_size]
+        repeats[ctx.dim] = ctx.input_size[ctx.dim]
+        return grad_output.repeat(*repeats), None, None
 
 
 class Prod(Function):
@@ -106,10 +102,7 @@ class Mean(Function):
         ctx.dim = dim
         ctx.keepdim = keepdim
         ctx.input_size = input.size()
-        if dim is None:
-            return input.new((input.mean(),))
-        else:
-            return input.mean(dim, keepdim)
+        return input.new((input.mean(),)) if dim is None else input.mean(dim, keepdim)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -144,10 +137,7 @@ class _SelectionFunction(Function):
             ctx.indices_tuple = tuple(input.eq(value).nonzero()[0])
             return input.new((value,))
         else:
-            if ctx.dim is None:
-                dim = input.dim() - 1
-            else:
-                dim = ctx.dim
+            dim = input.dim() - 1 if ctx.dim is None else ctx.dim
             args = (dim, keepdim)
             if additional_args:
                 args = additional_args + args
@@ -162,11 +152,7 @@ class _SelectionFunction(Function):
         if ctx.dim is None and cls.has_all_reduce:
             grad_input[ctx.indices_tuple] = grad_output
         else:
-            if ctx.dim is None:
-                dim = len(ctx.input_size) - 1
-            else:
-                dim = ctx.dim
-
+            dim = len(ctx.input_size) - 1 if ctx.dim is None else ctx.dim
             indices, = ctx.saved_variables
             if ctx.keepdim is False:
                 grad_output = grad_output.unsqueeze(dim)

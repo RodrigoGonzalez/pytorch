@@ -72,8 +72,8 @@ class SpatialAveragePooling(Module):
 
     def __repr__(self):
         s = super(SpatialAveragePooling, self).__repr__()
-        s += '({}x{}, {}, {}'.format(self.kW, self.kH, self.dW, self.dH)
+        s += f'({self.kW}x{self.kH}, {self.dW}, {self.dH}'
         if (self.padW or self.padH) and (self.padW != 0 or self.padH != 0):
-            s += ', {}, {}'.format(self.padW, self.padH)
+            s += f', {self.padW}, {self.padH}'
         s += ')'
         return s

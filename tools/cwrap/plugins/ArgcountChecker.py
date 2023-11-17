@@ -9,5 +9,5 @@ class ArgcountChecker(CWrapPlugin):
         else:
             indent = '\n          '
             argcount = option['num_checked_args'] + option.get('argcount_offset', 0)
-            checks = '__argcount == {} &&'.format(str(argcount)) + indent + checks
+            checks = f'__argcount == {str(argcount)} &&{indent}{checks}'
         return checks

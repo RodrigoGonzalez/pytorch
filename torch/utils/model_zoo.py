@@ -52,7 +52,7 @@ def load_url(url, model_dir=None, map_location=None):
     filename = os.path.basename(parts.path)
     cached_file = os.path.join(model_dir, filename)
     if not os.path.exists(cached_file):
-        sys.stderr.write('Downloading: "{}" to {}\n'.format(url, cached_file))
+        sys.stderr.write(f'Downloading: "{url}" to {cached_file}\n')
         hash_prefix = HASH_REGEX.search(filename).group(1)
         _download_url_to_file(url, cached_file, hash_prefix)
     return torch.load(cached_file, map_location=map_location)
@@ -81,8 +81,9 @@ def _download_url_to_file(url, dst, hash_prefix):
         f.close()
         digest = sha256.hexdigest()
         if digest[:len(hash_prefix)] != hash_prefix:
-            raise RuntimeError('invalid hash value (expected "{}", got "{}")'
-                               .format(hash_prefix, digest))
+            raise RuntimeError(
+                f'invalid hash value (expected "{hash_prefix}", got "{digest}")'
+            )
         shutil.move(f.name, dst)
     finally:
         f.close()

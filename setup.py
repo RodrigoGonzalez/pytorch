@@ -121,10 +121,10 @@ class build_py(setuptools.command.build_py.build_py):
     @staticmethod
     def create_version_file():
         global version, cwd
-        print('-- Building version ' + version)
+        print(f'-- Building version {version}')
         version_path = os.path.join(cwd, 'torch', 'version.py')
         with open(version_path, 'w') as f:
-            f.write("__version__ = '{}'\n".format(version))
+            f.write(f"__version__ = '{version}'\n")
 
 
 class develop(setuptools.command.develop.develop):
@@ -143,11 +143,11 @@ class build_ext(setuptools.command.build_ext.build_ext):
         else:
             print('-- NumPy not found')
         if WITH_CUDNN:
-            print('-- Detected cuDNN at ' + CUDNN_LIB_DIR + ', ' + CUDNN_INCLUDE_DIR)
+            print(f'-- Detected cuDNN at {CUDNN_LIB_DIR}, {CUDNN_INCLUDE_DIR}')
         else:
             print('-- Not using cuDNN')
         if WITH_CUDA:
-            print('-- Detected CUDA at ' + CUDA_HOME)
+            print(f'-- Detected CUDA at {CUDA_HOME}')
         else:
             print('-- Not using CUDA')
         if WITH_NCCL and SYSTEM_NCCL:
@@ -221,7 +221,6 @@ class clean(distutils.command.clean.clean):
 ################################################################################
 
 include_dirs = []
-library_dirs = []
 extra_link_args = []
 extra_compile_args = ['-std=c++11', '-Wno-write-strings',
                       # Python 2.6 requires -fno-strict-aliasing, see
@@ -235,18 +234,17 @@ if os.getenv('PYTORCH_BINARY_BUILD') and platform.system() == 'Linux':
 cwd = os.path.dirname(os.path.abspath(__file__))
 lib_path = os.path.join(cwd, "torch", "lib")
 
-tmp_install_path = lib_path + "/tmp_install"
+tmp_install_path = f"{lib_path}/tmp_install"
 include_dirs += [
     cwd,
     os.path.join(cwd, "torch", "csrc"),
-    tmp_install_path + "/include",
-    tmp_install_path + "/include/TH",
-    tmp_install_path + "/include/THPP",
-    tmp_install_path + "/include/THNN",
+    f"{tmp_install_path}/include",
+    f"{tmp_install_path}/include/TH",
+    f"{tmp_install_path}/include/THPP",
+    f"{tmp_install_path}/include/THNN",
 ]
 
-library_dirs.append(lib_path)
-
+library_dirs = [lib_path]
 # we specify exact lib names to avoid conflict with lua-torch installs
 TH_LIB = os.path.join(lib_path, 'libTH.so.1')
 THS_LIB = os.path.join(lib_path, 'libTHS.so.1')
@@ -330,7 +328,7 @@ if WITH_DISTRIBUTED:
             "torch/csrc/distributed/Storage.cpp",
         ]
         extra_compile_args += ['-DWITH_DISTRIBUTED_MW']
-    include_dirs += [tmp_install_path + "/include/THD"]
+    include_dirs += [f"{tmp_install_path}/include/THD"]
     main_link_args += [THD_LIB]
 
 if WITH_CUDA:
@@ -341,11 +339,11 @@ if WITH_CUDA:
         if os.path.exists(cuda_lib_path):
             break
     include_dirs.append(cuda_include_path)
-    include_dirs.append(tmp_install_path + "/include/THCUNN")
+    include_dirs.append(f"{tmp_install_path}/include/THCUNN")
     library_dirs.append(cuda_lib_path)
-    extra_link_args.append('-Wl,-rpath,' + cuda_lib_path)
+    extra_link_args.append(f'-Wl,-rpath,{cuda_lib_path}')
     extra_compile_args += ['-DWITH_CUDA']
-    extra_compile_args += ['-DCUDA_LIB_PATH=' + cuda_lib_path]
+    extra_compile_args += [f'-DCUDA_LIB_PATH={cuda_lib_path}']
     main_libraries += ['cudart', 'nvToolsExt']
     main_link_args += [THC_LIB, THCS_LIB, THCUNN_LIB]
     main_sources += [
@@ -386,15 +384,14 @@ if DEBUG:
 
 def make_relative_rpath(path):
     if platform.system() == 'Darwin':
-        return '-Wl,-rpath,@loader_path/' + path
+        return f'-Wl,-rpath,@loader_path/{path}'
     else:
-        return '-Wl,-rpath,$ORIGIN/' + path
+        return f'-Wl,-rpath,$ORIGIN/{path}'
 
 ################################################################################
 # Declare extensions and package
 ################################################################################
 
-extensions = []
 packages = find_packages(exclude=('tools.*',))
 
 C = Extension("torch._C",
@@ -406,8 +403,7 @@ C = Extension("torch._C",
               library_dirs=library_dirs,
               extra_link_args=extra_link_args + main_link_args + [make_relative_rpath('lib')],
               )
-extensions.append(C)
-
+extensions = [C]
 DL = Extension("torch._dl",
                sources=["torch/csrc/dl.c"],
                language='c',
@@ -450,7 +446,7 @@ if os.getenv('PYTORCH_BUILD_VERSION'):
 else:
     try:
         sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
-        version += '+' + sha[:7]
+        version += f'+{sha[:7]}'
     except subprocess.CalledProcessError:
         pass
 

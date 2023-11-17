@@ -19,7 +19,9 @@ def init_process_group(backend, init_method='env://', **kwargs):
     world_size = kwargs.pop('world_size', -1)
     group_name = kwargs.pop('group_name', '')
     rank = kwargs.pop('rank', -1)
-    assert len(kwargs) == 0, "got unexpected keyword arguments: %s" % ",".join(kwargs.keys())
+    assert (
+        not kwargs
+    ), f'got unexpected keyword arguments: {",".join(kwargs.keys())}'
 
     if not is_available():
         raise RuntimeError("PyTorch built without distributed support")
@@ -47,7 +49,9 @@ def init_master_worker(backend, init_method='env://', **kwargs):
     world_size = kwargs.pop('world_size', -1)
     group_name = kwargs.pop('group_name', '')
     rank = kwargs.pop('rank', -1)
-    assert len(kwargs) == 0, "got unexpected keyword arguments: %s" % ",".join(kwargs.keys())
+    assert (
+        not kwargs
+    ), f'got unexpected keyword arguments: {",".join(kwargs.keys())}'
 
     if not is_available():
         raise RuntimeError("PyTorch built without distributed support")

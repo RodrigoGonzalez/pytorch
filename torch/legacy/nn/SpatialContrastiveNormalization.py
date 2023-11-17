@@ -12,16 +12,13 @@ class SpatialContrastiveNormalization(Module):
 
         # get args
         self.nInputPlane = nInputPlane
-        if kernel is None:
-            self.kernel = torch.Tensor(9, 9).fill_(1)
-        else:
-            self.kernel = kernel
+        self.kernel = torch.Tensor(9, 9).fill_(1) if kernel is None else kernel
         self.threshold = threshold
         self.thresval = thresval or threshold
         kdim = self.kernel.ndimension()
 
         # check args
-        if kdim != 2 and kdim != 1:
+        if kdim not in [2, 1]:
             raise ValueError('SpatialContrastiveNormalization averaging kernel must be 2D or 1D')
 
         if self.kernel.size(0) % 2 == 0 or (kdim == 2 and (self.kernel.size(1) % 2) == 0):

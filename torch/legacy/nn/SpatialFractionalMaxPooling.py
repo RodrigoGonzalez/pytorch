@@ -129,7 +129,4 @@ class SpatialFractionalMaxPooling(Module):
         return super(SpatialFractionalMaxPooling, self).clearState()
 
     def __repr__(self):
-        return super(SpatialFractionalMaxPooling, self).__repr__() + \
-            '({}x{}, {}, {})'.format(self.outW or self.ratioW,
-                                     self.outH or self.ratioH,
-                                     self.poolSizeW, self.poolSizeH)
+        return f'{super(SpatialFractionalMaxPooling, self).__repr__()}({self.outW or self.ratioW}x{self.outH or self.ratioH}, {self.poolSizeW}, {self.poolSizeH})'

@@ -74,13 +74,15 @@ class Variable(_C._VariableBase):
         return Index.apply(self, key)
 
     def __setitem__(self, key, value):
-        if isinstance(key, Variable) and type(key.data).__name__ == 'ByteTensor':
-            if isinstance(value, Variable):
-                return MaskedScatter.apply(self, key, value, True)
-            else:
-                return MaskedFill.apply(self, key, value, True)
-        else:
+        if (
+            not isinstance(key, Variable)
+            or type(key.data).__name__ != 'ByteTensor'
+        ):
             return SetItem.apply(self, key, value)
+        if isinstance(value, Variable):
+            return MaskedScatter.apply(self, key, value, True)
+        else:
+            return MaskedFill.apply(self, key, value, True)
 
     def __deepcopy__(self, memo):
         if not self.is_leaf:
@@ -112,7 +114,7 @@ class Variable(_C._VariableBase):
         self.requires_grad, self.volatile, self._backward_hooks = state
 
     def __repr__(self):
-        return 'Variable containing:' + self.data.__repr__()
+        return f'Variable containing:{self.data.__repr__()}'
 
     def __bool__(self):
         if self.data.numel() == 0:
@@ -233,9 +235,7 @@ class Variable(_C._VariableBase):
         return Clone.apply(self)
 
     def type(self, t):
-        if t != type(self.data):
-            return Type.apply(self, t)
-        return self
+        return Type.apply(self, t) if t != type(self.data) else self
 
     def type_as(self, t):
         if isinstance(t, Variable):
@@ -282,9 +282,8 @@ class Variable(_C._VariableBase):
     def _add(self, other, inplace):
         if isinstance(other, Variable):
             return Add.apply(self, other, inplace)
-        else:
-            assert not torch.is_tensor(other)
-            return AddConstant.apply(self, other, inplace)
+        assert not torch.is_tensor(other)
+        return AddConstant.apply(self, other, inplace)
 
     def add(self, other):
         return self._add(other, False)
@@ -295,9 +294,8 @@ class Variable(_C._VariableBase):
     def _sub(self, other, inplace):
         if isinstance(other, Variable):
             return Sub.apply(self, other, inplace)
-        else:
-            assert not torch.is_tensor(other)
-            return SubConstant.apply(self, other, inplace)
+        assert not torch.is_tensor(other)
+        return SubConstant.apply(self, other, inplace)
 
     def sub(self, other):
         return self._sub(other, False)
@@ -308,9 +306,8 @@ class Variable(_C._VariableBase):
     def mul(self, other):
         if isinstance(other, Variable):
             return Mul.apply(self, other)
-        else:
-            assert not torch.is_tensor(other)
-            return MulConstant.apply(self, other)
+        assert not torch.is_tensor(other)
+        return MulConstant.apply(self, other)
 
     def mul_(self, other):
         if not isinstance(other, Variable) and not torch.is_tensor(other):
@@ -320,9 +317,8 @@ class Variable(_C._VariableBase):
     def div(self, other):
         if isinstance(other, Variable):
             return Div.apply(self, other)
-        else:
-            assert not torch.is_tensor(other)
-            return DivConstant.apply(self, other)
+        assert not torch.is_tensor(other)
+        return DivConstant.apply(self, other)
 
     def div_(self, other):
         assert not torch.is_tensor(other)
@@ -331,9 +327,8 @@ class Variable(_C._VariableBase):
     def pow(self, other):
         if isinstance(other, Variable):
             return Pow.apply(self, other)
-        else:
-            assert not torch.is_tensor(other)
-            return PowConstant.apply(self, other)
+        assert not torch.is_tensor(other)
+        return PowConstant.apply(self, other)
 
     def exp(self):
         return Exp.apply(self)
@@ -396,9 +391,9 @@ class Variable(_C._VariableBase):
         if min is None and max is None:
             raise ValueError("clamp requires specifying at least one of "
                              "min and max arguments")
-        elif min is None and max is not None:
+        elif min is None:
             return CminConstant.apply(self, max)
-        elif min is not None and max is None:
+        elif max is None:
             return CmaxConstant.apply(self, min)
         else:
             return Clamp.apply(self, min, max)
@@ -501,8 +496,7 @@ class Variable(_C._VariableBase):
     def var(self, dim=None, keepdim=False, unbiased=True):
         mean = self.mean(dim, keepdim)
         if dim is None:
-            mean = mean.view(*(1 for s in self.size()))
-        # we could just set keepdim to True, but this preserves some fidelity
+            mean = mean.view(*(1 for _ in self.size()))
         elif keepdim is False:
             mean = mean.unsqueeze(dim)
         mean_expanded = mean.expand_as(self)
@@ -531,10 +525,10 @@ class Variable(_C._VariableBase):
         alpha = beta = 1
         if num_args > 5:
             raise RuntimeError("too many args")
-        if num_args == 5:
-            alpha, beta = args[1:3]
         if num_args == 4:
             alpha = args[1]
+        elif num_args == 5:
+            alpha, beta = args[1:3]
         return cls.apply(*(args[:1] + args[-2:] + (alpha, beta, inplace)))
 
     def _blas(self, cls, args, inplace):
@@ -688,7 +682,7 @@ class Variable(_C._VariableBase):
 
     def t(self):
         if self.dim() != 2:
-            raise RuntimeError("t() expects a 2D Variable, but self is {}D".format(self.dim()))
+            raise RuntimeError(f"t() expects a 2D Variable, but self is {self.dim()}D")
         return Transpose.apply(self, 0, 1)
 
     def transpose(self, dim1, dim2):
@@ -795,9 +789,7 @@ class Variable(_C._VariableBase):
         return self.mul_(other)
 
     def __matmul__(self, other):
-        if not isinstance(other, Variable):
-            return NotImplemented
-        return self.matmul(other)
+        return self.matmul(other) if isinstance(other, Variable) else NotImplemented
 
     def __div__(self, other):
         return self.div(other)

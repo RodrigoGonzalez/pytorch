@@ -97,16 +97,16 @@ static PyObject * $name(PyObject *self, PyObject *args, PyObject *kwargs)
     def get_wrapper_template(self, declaration):
         arg_desc = []
         for option in declaration['options']:
-            option_desc = [self.TYPE_NAMES.get(arg['type'], arg['type']) + ' ' + arg['name']
-                           for arg in option['arguments']
-                           if not arg.get('ignore_check', False)]
-            # TODO: this should probably go to THPLongArgsPlugin
-            if option_desc:
-                arg_desc.append('({})'.format(', '.join(option_desc)))
+            if option_desc := [
+                self.TYPE_NAMES.get(arg['type'], arg['type']) + ' ' + arg['name']
+                for arg in option['arguments']
+                if not arg.get('ignore_check', False)
+            ]:
+                arg_desc.append(f"({', '.join(option_desc)})")
             else:
                 arg_desc.append('no arguments')
         arg_desc.sort(key=len)
-        arg_desc = ['"' + desc + '"' for desc in arg_desc]
+        arg_desc = [f'"{desc}"' for desc in arg_desc]
         arg_str = ', '.join(arg_desc)
         readable_name = declaration['python_name']
         return Template(self.WRAPPER_TEMPLATE.safe_substitute(
@@ -127,8 +127,8 @@ static PyObject * $name(PyObject *self, PyObject *args, PyObject *kwargs)
 
     def process_declarations(self, declarations):
         for declaration in declarations:
-            declaration.setdefault('python_name', '_{}'.format(declaration['name']))
-            declaration['name'] = 'THCUDNN_{}'.format(declaration['name'])
+            declaration.setdefault('python_name', f"_{declaration['name']}")
+            declaration['name'] = f"THCUDNN_{declaration['name']}"
             self.declarations.append(declaration)
             for option in declaration['options']:
                 for arg in option['arguments']:
@@ -151,7 +151,7 @@ static PyObject * $name(PyObject *self, PyObject *args, PyObject *kwargs)
         return unique
 
     def preprocessor_guard(self, code, condition):
-        return '#if ' + condition + '\n' + code + '#endif\n'
+        return f'#if {condition}' + '\n' + code + '#endif\n'
 
     def process_wrapper(self, code, declaration):
         if 'defined_if' in declaration:
@@ -159,7 +159,7 @@ static PyObject * $name(PyObject *self, PyObject *args, PyObject *kwargs)
         return code
 
     def process_all_call_arg(self, code, option):
-        return 'state, ' + code
+        return f'state, {code}'
 
     def declare_methods(self):
         methods = ''

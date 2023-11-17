@@ -129,8 +129,7 @@ class _SparseBase(object):
     def __str__(self):
         # NB: modest duplication with _tensor_str
         size_str = 'x'.join(str(size) for size in self.size())
-        return '{} of size {} with indices:\n{}and values:\n{}'.format(
-            self.__class__.__name__, size_str, self._indices(), self._values())
+        return f'{self.__class__.__name__} of size {size_str} with indices:\n{self._indices()}and values:\n{self._values()}'
 
 
 class DoubleTensor(_SparseBase, _C.SparseDoubleTensorBase, _TensorBase):

@@ -56,10 +56,7 @@ def cg(opfunc, x, config, state=None):
     maxEval = config.get('maxEval', maxIter * 1.25)
     red = 1
 
-    i = 0
     ls_failed = 0
-    fx = []
-
     # we need three points for the interpolation/extrapolation stuff
     z1, z2, z3 = 0, 0, 0
     d1, d2, d3 = 0, 0, 0
@@ -86,10 +83,9 @@ def cg(opfunc, x, config, state=None):
 
     # evaluate at initial point
     f1, tdf = opfunc(x)
-    fx.append(f1)
+    fx = [f1]
     df1.copy_(tdf)
-    i = i + 1
-
+    i = 0 + 1
     # initial search direction
     s.copy_(df1).mul_(-1)
 
@@ -104,7 +100,7 @@ def cg(opfunc, x, config, state=None):
         x.add_(z1, s)
         f2, tdf = opfunc(x)
         df2.copy_(tdf)
-        i = i + 1
+        i += 1
         d2 = df2.dot(s)
         f3, d3, z3 = f1, d1, -z1   # init point 3 equal to point 1
         m = min(maxIter, maxEval - i)
@@ -148,10 +144,7 @@ def cg(opfunc, x, config, state=None):
             z2 = -d2 * z3 * z3 / _denom if _denom != 0 else float('nan')
 
             if z2 != z2 or z2 == INFINITY or z2 == -INFINITY or z2 < 0:
-                if limit < -0.5:
-                    z2 = z1 * (ext - 1)
-                else:
-                    z2 = (limit - z1) / 2
+                z2 = z1 * (ext - 1) if limit < -0.5 else (limit - z1) / 2
             elif (limit > -0.5) and (z2 + z1) > limit:
                 z2 = (limit - z1) / 2
             elif limit < -0.5 and (z2 + z1) > z1 * ext:

@@ -13,8 +13,10 @@ class BeforeAfterCall(CWrapPlugin):
             return
         if '$' in prepend_str:
             before_call_template = Template(option[name])
-            args = {'arg' + str(i): self.cwrap.get_arg_accessor(arg, option) for i, arg
-                    in enumerate(option['arguments'])}
+            args = {
+                f'arg{str(i)}': self.cwrap.get_arg_accessor(arg, option)
+                for i, arg in enumerate(option['arguments'])
+            }
             prepend_str = before_call_template.substitute(args)
         template.insert(offset, prepend_str)
 

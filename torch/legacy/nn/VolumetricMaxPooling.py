@@ -71,8 +71,8 @@ class VolumetricMaxPooling(Module):
 
     def __repr__(self):
         s = super(VolumetricMaxPooling, self).__repr__()
-        s += '({}x{}x{}, {}, {}, {}'.format(self.kT, self.kW, self.kH, self.dT, self.dW, self.dH)
+        s += f'({self.kT}x{self.kW}x{self.kH}, {self.dT}, {self.dW}, {self.dH}'
         if self.padT != 0 or self.padW != 0 or self.padH != 0:
-            s += ', {}, {}, {}'.format(self.padT, self.padW, self.padH)
+            s += f', {self.padT}, {self.padW}, {self.padH}'
         s += ')'
         return s

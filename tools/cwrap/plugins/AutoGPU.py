@@ -18,8 +18,7 @@ class AutoGPU(CWrapPlugin):
     def process_pre_arg_assign(self, template, option):
         if not option.get('auto_gpu', True):
             return template
-        call = 'THCPAutoGPU __autogpu_guard = THCPAutoGPU(args{});'.format(
-            ', (PyObject*)self' if self.has_self else '')
+        call = f"THCPAutoGPU __autogpu_guard = THCPAutoGPU(args{', (PyObject*)self' if self.has_self else ''});"
 
         if self.condition is not None:
             call = "#if {0}\n      {1}\n#endif\n".format(self.condition, call)

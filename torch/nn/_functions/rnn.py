@@ -10,13 +10,11 @@ except ImportError:
 
 
 def RNNReLUCell(input, hidden, w_ih, w_hh, b_ih=None, b_hh=None):
-    hy = F.relu(F.linear(input, w_ih, b_ih) + F.linear(hidden, w_hh, b_hh))
-    return hy
+    return F.relu(F.linear(input, w_ih, b_ih) + F.linear(hidden, w_hh, b_hh))
 
 
 def RNNTanhCell(input, hidden, w_ih, w_hh, b_ih=None, b_hh=None):
-    hy = F.tanh(F.linear(input, w_ih, b_ih) + F.linear(hidden, w_hh, b_hh))
-    return hy
+    return F.tanh(F.linear(input, w_ih, b_ih) + F.linear(hidden, w_hh, b_hh))
 
 
 def LSTMCell(input, hidden, w_ih, w_hh, b_ih=None, b_hh=None):
@@ -58,9 +56,7 @@ def GRUCell(input, hidden, w_ih, w_hh, b_ih=None, b_hh=None):
     resetgate = F.sigmoid(i_r + h_r)
     inputgate = F.sigmoid(i_i + h_i)
     newgate = F.tanh(i_n + resetgate * h_n)
-    hy = newgate + inputgate * (hidden - newgate)
-
-    return hy
+    return newgate + inputgate * (hidden - newgate)
 
 
 def StackedRNN(inners, num_layers, lstm=False, dropout=0, train=True):
@@ -277,11 +273,7 @@ class CudnnRNN(NestedIOFunction):
 
         output = input.new()
 
-        if torch.is_tensor(hx):
-            hy = hx.new()
-        else:
-            hy = tuple(h.new() for h in hx)
-
+        hy = hx.new() if torch.is_tensor(hx) else tuple(h.new() for h in hx)
         cudnn.rnn.forward(self, input, hx, weight, output, hy)
 
         self.save_for_backward(input, hx, weight, output)
@@ -296,11 +288,7 @@ class CudnnRNN(NestedIOFunction):
         assert cudnn.is_acceptable(input)
 
         grad_input = input.new()
-        if torch.is_tensor(hx):
-            grad_hx = input.new()
-        else:
-            grad_hx = tuple(h.new() for h in hx)
-
+        grad_hx = input.new() if torch.is_tensor(hx) else tuple(h.new() for h in hx)
         if self.retain_variables:
             self._reserve_clone = self.reserve.clone()
 

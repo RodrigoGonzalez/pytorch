@@ -8,7 +8,7 @@ class Reshape(Module):
     def __init__(self, *args):
         super(Reshape, self).__init__()
 
-        if len(args) == 0 and isinstance(args[0], torch.Size):
+        if not args and isinstance(args[0], torch.Size):
             self.size = args[0]
         else:
             self.size = torch.Size(args)
@@ -45,8 +45,7 @@ class Reshape(Module):
         return self.gradInput
 
     def __repr__(self):
-        return super(Reshape, self).__repr__() + \
-            '({})'.format('x'.join(map(lambda x: str(x), self.size)))
+        return f"{super(Reshape, self).__repr__()}({'x'.join(map(lambda x: str(x), self.size))})"
 
     def clearState(self):
         clear(self, '_input', '_gradOutput')

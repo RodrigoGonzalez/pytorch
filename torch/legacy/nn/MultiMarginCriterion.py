@@ -6,7 +6,7 @@ class MultiMarginCriterion(Criterion):
 
     def __init__(self, p=1, weights=None, margin=1, sizeAverage=True):
         super(MultiMarginCriterion, self).__init__()
-        if p != 1 and p != 2:
+        if p not in [1, 2]:
             raise ValueError("only p == 1 and p == 2 supported")
         self.p = p
         self.margin = margin

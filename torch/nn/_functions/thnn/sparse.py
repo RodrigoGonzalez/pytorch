@@ -122,8 +122,7 @@ class EmbeddingBag(Function):
         elif mode == 'mean':
             self.mode = MODE_MEAN
         else:
-            raise ValueError("mode needs to be 'sum' or 'mean', but got {}"
-                             .format(mode))
+            raise ValueError(f"mode needs to be 'sum' or 'mean', but got {mode}")
 
     def _renorm(self, indices, weight):
         self._backend.LookupTable_renorm(
@@ -136,23 +135,23 @@ class EmbeddingBag(Function):
 
     def forward(self, weight, indices, offsets):
         assert not self.needs_input_grad[1], "EmbeddingBag doesn't " \
-            "compute the gradient w.r.t. the indices"
+                "compute the gradient w.r.t. the indices"
 
         assert not self.needs_input_grad[2], "EmbeddingBag doesn't " \
-            "compute the gradient w.r.t. the offsets"
+                "compute the gradient w.r.t. the offsets"
 
         assert indices.dim() == 1
         if offsets.dim() != 1:
             raise ValueError("offsets has to be a 1D Tensor")
 
         if offsets[0] != 0:
-            raise ValueError("offsets[0] has to be 0, i.e. the first sequence"
-                             " in the mini-batch has to start from position 0."
-                             "However, got {}".format(offsets[0]))
+            raise ValueError(
+                f"offsets[0] has to be 0, i.e. the first sequence in the mini-batch has to start from position 0.However, got {offsets[0]}"
+            )
         if offsets[-1] > indices.size(0):
-            raise ValueError("offsets[-1] has to be smaller than indices's length"
-                             " ({}), but got offsets[-1] of {}"
-                             .format(indices.size(0), offsets[-1]))
+            raise ValueError(
+                f"offsets[-1] has to be smaller than indices's length ({indices.size(0)}), but got offsets[-1] of {offsets[-1]}"
+            )
 
         self._backend = type2backend[type(weight)]
         self._weight_size = weight.size()

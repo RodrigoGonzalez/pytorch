@@ -89,10 +89,7 @@ class TestOptim(TestCase):
                 y = grad[1]
                 v = torch.DoubleTensor([y - y / 4., y / 4.])
             x = sparse.DoubleTensor(i, v, torch.Size([2]))
-            if sparse_grad:
-                params.grad.data = x
-            else:
-                params.grad.data = x.to_dense()
+            params.grad.data = x if sparse_grad else x.to_dense()
             return loss
 
         for i in range(2000):
@@ -189,7 +186,7 @@ class TestOptim(TestCase):
             constructor
         )
         # Multi-GPU
-        if not torch.cuda.device_count() > 1 or ignore_multidevice:
+        if torch.cuda.device_count() <= 1 or ignore_multidevice:
             return
         self._test_basic_cases_template(
             torch.randn(10, 5).cuda(0),
@@ -540,19 +537,25 @@ class TestLRScheduler(TestCase):
         for epoch in range(epochs):
             scheduler.step(epoch)
             for param_group, target in zip(self.opt.param_groups, targets):
-                self.assertAlmostEqual(target[epoch], param_group['lr'],
-                                       msg='LR is wrong in epoch {}: expected {}, got {}'.format(
-                                           epoch, target[epoch], param_group['lr']), delta=1e-5)
+                self.assertAlmostEqual(
+                    target[epoch],
+                    param_group['lr'],
+                    msg=f"LR is wrong in epoch {epoch}: expected {target[epoch]}, got {param_group['lr']}",
+                    delta=1e-5,
+                )
 
     def _test_reduce_lr_on_plateau(self, scheduler, targets, metrics, epochs=10, verbose=False):
         for epoch in range(epochs):
             scheduler.step(metrics[epoch])
             if verbose:
-                print('epoch{}:\tlr={}'.format(epoch, self.opt.param_groups[0]['lr']))
+                print(f"epoch{epoch}:\tlr={self.opt.param_groups[0]['lr']}")
             for param_group, target in zip(self.opt.param_groups, targets):
-                self.assertAlmostEqual(target[epoch], param_group['lr'],
-                                       msg='LR is wrong in epoch {}: expected {}, got {}'.format(
-                                           epoch, target[epoch], param_group['lr']), delta=1e-5)
+                self.assertAlmostEqual(
+                    target[epoch],
+                    param_group['lr'],
+                    msg=f"LR is wrong in epoch {epoch}: expected {target[epoch]}, got {param_group['lr']}",
+                    delta=1e-5,
+                )
 
 if __name__ == '__main__':
     run_tests()

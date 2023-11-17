@@ -16,7 +16,7 @@ class L1HingeEmbeddingCriterion(Criterion):
 
         return self.output
 
-    def _mathsign(t):
+    def _mathsign(self):
         return 1 if x > 0 else -1
 
     def updateGradInput(self, input, y):

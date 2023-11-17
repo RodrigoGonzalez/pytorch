@@ -36,35 +36,35 @@ class _TensorBase(object):
 
     def double(self):
         """Casts this tensor to double type"""
-        return self.type(type(self).__module__ + '.DoubleTensor')
+        return self.type(f'{type(self).__module__}.DoubleTensor')
 
     def float(self):
         """Casts this tensor to float type"""
-        return self.type(type(self).__module__ + '.FloatTensor')
+        return self.type(f'{type(self).__module__}.FloatTensor')
 
     def half(self):
         """Casts this tensor to half-precision float type"""
-        return self.type(type(self).__module__ + '.HalfTensor')
+        return self.type(f'{type(self).__module__}.HalfTensor')
 
     def long(self):
         """Casts this tensor to long type"""
-        return self.type(type(self).__module__ + '.LongTensor')
+        return self.type(f'{type(self).__module__}.LongTensor')
 
     def int(self):
         """Casts this tensor to int type"""
-        return self.type(type(self).__module__ + '.IntTensor')
+        return self.type(f'{type(self).__module__}.IntTensor')
 
     def short(self):
         """Casts this tensor to short type"""
-        return self.type(type(self).__module__ + '.ShortTensor')
+        return self.type(f'{type(self).__module__}.ShortTensor')
 
     def char(self):
         """Casts this tensor to char type"""
-        return self.type(type(self).__module__ + '.CharTensor')
+        return self.type(f'{type(self).__module__}.CharTensor')
 
     def byte(self):
         """Casts this tensor to byte type"""
-        return self.type(type(self).__module__ + '.ByteTensor')
+        return self.type(f'{type(self).__module__}.ByteTensor')
 
     def is_pinned(self):
         """Returns true if this tensor resides in pinned memory"""
@@ -125,23 +125,20 @@ class _TensorBase(object):
         return str(self)
 
     def __str__(self):
-        # All strings are unicode in Python 3, while we have to encode unicode
-        # strings in Python2. If we can't, let python decide the best
-        # characters to replace unicode characters with.
         if sys.version_info > (3,):
             return _tensor_str._str(self)
+        if hasattr(sys.stdout, 'encoding'):
+            return _tensor_str._str(self).encode(
+                sys.stdout.encoding or 'UTF-8', 'replace')
         else:
-            if hasattr(sys.stdout, 'encoding'):
-                return _tensor_str._str(self).encode(
-                    sys.stdout.encoding or 'UTF-8', 'replace')
-            else:
-                return _tensor_str._str(self).encode('UTF-8', 'replace')
+            return _tensor_str._str(self).encode('UTF-8', 'replace')
 
     def __bool__(self):
         if self.numel() == 0:
             return False
-        raise RuntimeError("bool value of non-empty " + torch.typename(self) +
-                           " objects is ambiguous")
+        raise RuntimeError(
+            f"bool value of non-empty {torch.typename(self)} objects is ambiguous"
+        )
 
     __nonzero__ = __bool__
 
@@ -172,7 +169,7 @@ class _TensorBase(object):
         """Returns a nested list represenation of this tensor."""
         dim = self.dim()
         if dim == 1:
-            return [v for v in self]
+            return list(self)
         elif dim > 0:
             return [subt.tolist() for subt in self]
         return []
@@ -204,10 +201,10 @@ class _TensorBase(object):
         n_dims = tensor.dim()
         assert len(perm) == n_dims, 'Invalid permutation'
         for i, p in enumerate(perm):
-            if p != i and p != -1:
+            if p not in [i, -1]:
                 j = i
                 while True:
-                    assert 0 <= perm[j] and perm[j] < n_dims, 'Invalid permutation'
+                    assert 0 <= perm[j] < n_dims, 'Invalid permutation'
                     tensor = tensor.transpose(j, perm[j])
                     perm[j], j = -1, perm[j]
                     if perm[j] == i:
@@ -256,7 +253,7 @@ class _TensorBase(object):
 
         xtensor = src.new().set_(src)
         xsize = list(xtensor.size())
-        for i in _range(len(repeats) - src.dim()):
+        for _ in _range(len(repeats) - src.dim()):
             xsize = [1] + xsize
 
         size = torch.Size([a * b for a, b in zip(xsize, repeats)])
@@ -265,7 +262,7 @@ class _TensorBase(object):
         urtensor = result.new(result)
         for i in _range(xtensor.dim()):
             urtensor = urtensor.unfold(i, xtensor.size(i), xtensor.size(i))
-        for i in _range(urtensor.dim() - xtensor.dim()):
+        for _ in _range(urtensor.dim() - xtensor.dim()):
             xsize = [1] + xsize
         xtensor.resize_(torch.Size(xsize))
         xxtensor = xtensor.expand_as(urtensor)
@@ -301,9 +298,7 @@ class _TensorBase(object):
         return self.mul_(other)
 
     def __matmul__(self, other):
-        if not torch.is_tensor(other):
-            return NotImplemented
-        return self.matmul(other)
+        return NotImplemented if not torch.is_tensor(other) else self.matmul(other)
 
     def __pow__(self, other):
         return self.pow(other)

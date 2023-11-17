@@ -37,7 +37,7 @@ class ReflectionPad2d(Module):
         return F.pad(input, self.padding, 'reflect')
 
     def __repr__(self):
-        return self.__class__.__name__ + ' ' + str(self.padding)
+        return f'{self.__class__.__name__} {str(self.padding)}'
 
 
 class ReplicationPad2d(Module):
@@ -72,7 +72,7 @@ class ReplicationPad2d(Module):
         return F.pad(input, self.padding, 'replicate')
 
     def __repr__(self):
-        return self.__class__.__name__ + ' ' + str(self.padding)
+        return f'{self.__class__.__name__} {str(self.padding)}'
 
 
 class ReplicationPad3d(Module):
@@ -109,7 +109,7 @@ class ReplicationPad3d(Module):
         return F.pad(input, self.padding, 'replicate')
 
     def __repr__(self):
-        return self.__class__.__name__ + ' ' + str(self.padding)
+        return f'{self.__class__.__name__} {str(self.padding)}'
 
 
 class ZeroPad2d(Module):
@@ -144,7 +144,7 @@ class ZeroPad2d(Module):
         return F.pad(input, self.padding, 'constant', 0)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' ' + str(self.padding)
+        return f'{self.__class__.__name__} {str(self.padding)}'
 
 
 class ConstantPad2d(Module):
@@ -180,4 +180,4 @@ class ConstantPad2d(Module):
         return F.pad(input, self.padding, 'constant', self.value)
 
     def __repr__(self):
-        return self.__class__.__name__ + ' ' + str(self.padding)
+        return f'{self.__class__.__name__} {str(self.padding)}'

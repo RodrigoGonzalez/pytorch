@@ -32,13 +32,13 @@ class StochasticFunction(Function):
     def _reinforce(self, reward):
         is_number = isinstance(reward, Number)
         if not is_number and type(reward) != self.reward_info[0]:
-            raise TypeError("mismatch between reward and output type: got {}, "
-                            "but expected {}".format(torch.typename(reward),
-                                                     torch.typename(self.reward_info[0])))
+            raise TypeError(
+                f"mismatch between reward and output type: got {torch.typename(reward)}, but expected {torch.typename(self.reward_info[0])}"
+            )
         if not is_number and reward.size() != self.reward_info[1]:
-            raise ValueError("got reward of size {}, but expected a tensor of size {}".format(
-                             'x'.join(map(str, reward.size())),
-                             'x'.join(map(str, self.reward_info[1]))))
+            raise ValueError(
+                f"got reward of size {'x'.join(map(str, reward.size()))}, but expected a tensor of size {'x'.join(map(str, self.reward_info[1]))}"
+            )
         if self.reward is not _NOT_PROVIDED:
             raise RuntimeError("you can only reinforce a stochastic Function once")
         self.reward = reward

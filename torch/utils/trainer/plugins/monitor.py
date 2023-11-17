@@ -8,8 +8,8 @@ class Monitor(Plugin):
         if precision is None:
             precision = 4
         if number_format is None:
-            number_format = '.{}f'.format(precision)
-        number_format = ':' + number_format
+            number_format = f'.{precision}f'
+        number_format = f':{number_format}'
         super(Monitor, self).__init__([(1, 'iteration'), (1, 'epoch')])
 
         self.smoothing = smoothing

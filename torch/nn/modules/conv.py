@@ -378,7 +378,7 @@ class _ConvTransposeMixin(object):
                     "from {} to {} (for an input of {})").format(
                         output_size, min_sizes, max_sizes, input.size()[2:]))
 
-        return tuple([output_size[d] - min_sizes[d] for d in range(k)])
+        return tuple(output_size[d] - min_sizes[d] for d in range(k))
 
 
 class ConvTranspose1d(_ConvTransposeMixin, _ConvNd):

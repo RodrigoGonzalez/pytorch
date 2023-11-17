@@ -186,9 +186,7 @@ class TestNN(NNTestCase):
 
     def _backward(self, module, input, output, grad_output):
         output.backward(grad_output, retain_graph=True)
-        if input.grad is None:
-            return None
-        return input.grad.data
+        return None if input.grad is None else input.grad.data
 
     def _forward_criterion(self, criterion, input, target):
         if isinstance(input, tuple):
@@ -480,13 +478,13 @@ class TestNN(NNTestCase):
         n = Net()
         s = nn.Sequential(n, n, n, n)
 
-        for name in dict(l.named_parameters()).keys():
+        for name in dict(l.named_parameters()):
             self.assertTrue(name in ['bias', 'weight'])
 
-        for name in dict(n.named_parameters()).keys():
+        for name in dict(n.named_parameters()):
             self.assertTrue(name in ['l1.bias', 'l1.weight', 'param'])
 
-        for name in dict(s.named_parameters()).keys():
+        for name in dict(s.named_parameters()):
             self.assertTrue(name in ['0.l1.bias', '0.l1.weight', '0.param'])
 
         self.assertEqual(num_params(l), 2)
@@ -802,11 +800,7 @@ class TestNN(NNTestCase):
                 grad_output = grad_output.cuda()
 
             output = es(input.view(-1), offsets)
-            if mode == 'sum':
-                ref_output = e(input).sum(1)
-            else:
-                ref_output = e(input).mean(1)
-
+            ref_output = e(input).sum(1) if mode == 'sum' else e(input).mean(1)
             self.assertEqual(output, ref_output)
 
             output.backward(grad_output)
@@ -1517,13 +1511,12 @@ class TestNN(NNTestCase):
     def test_ConvTranspose2d_output_size(self):
         m = nn.ConvTranspose2d(3, 4, 3, 3, 0, 2)
         i = Variable(torch.randn(2, 3, 6, 6))
-        for h in range(15, 22):
-            for w in range(15, 22):
-                if 18 <= h <= 20 and 18 <= w <= 20:
-                    output = m(i, output_size=(h, w))
-                    self.assertEqual(output.size()[2:], (h, w))
-                else:
-                    self.assertRaises(ValueError, lambda: m(i, (h, w)))
+        for h, w in product(range(15, 22), range(15, 22)):
+            if 18 <= h <= 20 and 18 <= w <= 20:
+                output = m(i, output_size=(h, w))
+                self.assertEqual(output.size()[2:], (h, w))
+            else:
+                self.assertRaises(ValueError, lambda: m(i, (h, w)))
 
     def test_Conv2d_naive_groups(self):
         # Check that grouped convolutions matches two half convolutions
@@ -1591,21 +1584,19 @@ class TestNN(NNTestCase):
         self.assertRaises(RuntimeError, lambda: mu(output_big, indices_big))
 
         small_t = torch.rand(1, 1, 5, 5)
-        for i in range(0, 4, 2):
-            for j in range(0, 4, 2):
-                small_t[:, :, i, j] = 100
+        for i, j in product(range(0, 4, 2), range(0, 4, 2)):
+            small_t[:, :, i, j] = 100
         output_small, indices_small = m(Variable(small_t))
-        for h in range(3, 10):
-            for w in range(3, 10):
-                if 4 <= h <= 6 and 4 <= w <= 6:
-                    size = (h, w)
-                    if h == 5:
-                        size = torch.LongStorage(size)
-                    elif h == 6:
-                        size = torch.LongStorage((1, 1) + size)
-                    mu(output_small, indices_small, output_size=size)
-                else:
-                    self.assertRaises(ValueError, lambda: mu(output_small, indices_small, (h, w)))
+        for h, w in product(range(3, 10), range(3, 10)):
+            if 4 <= h <= 6 and 4 <= w <= 6:
+                size = (h, w)
+                if h == 5:
+                    size = torch.LongStorage(size)
+                elif h == 6:
+                    size = torch.LongStorage((1, 1) + size)
+                mu(output_small, indices_small, output_size=size)
+            else:
+                self.assertRaises(ValueError, lambda: mu(output_small, indices_small, (h, w)))
 
     def test_container_copy(self):
         class Model(nn.Module):
@@ -1633,7 +1624,7 @@ class TestNN(NNTestCase):
                 input = Variable(torch.randn(3, 10))
                 hx = Variable(torch.randn(3, 20))
                 cell = module(10, 20, bias=bias)
-                for i in range(6):
+                for _ in range(6):
                     hx = cell(input, hx)
 
                 hx.sum().backward()
@@ -1755,7 +1746,7 @@ class TestNN(NNTestCase):
             hx = Variable(torch.randn(3, 20))
             cx = Variable(torch.randn(3, 20))
             lstm = nn.LSTMCell(10, 20, bias=bias)
-            for i in range(6):
+            for _ in range(6):
                 hx, cx = lstm(input, (hx, cx))
 
             (hx + cx).sum().backward()
@@ -1852,7 +1843,7 @@ class TestNN(NNTestCase):
             output = rnn(input)
             output[0].sum().backward(retain_graph=True)
             grads = [input.grad.data.clone()] + [p.grad.data.clone() for p in rnn.parameters()]
-            for i in range(4):
+            for _ in range(4):
                 rnn.zero_grad()
                 input.grad.data.zero_()
                 output[0].sum().backward(retain_graph=True)
@@ -2103,7 +2094,7 @@ class TestNN(NNTestCase):
                         self.assertNotEqual(hy1, hy2)
                         self.assertNotEqual(hy1, hy3)
 
-    @unittest.skipIf(not (TEST_CUDNN and TEST_CUDNN_VERSION >= 5103), "needs cudnn >= 5.1")
+    @unittest.skipIf(not TEST_CUDNN or TEST_CUDNN_VERSION < 5103, "needs cudnn >= 5.1")
     def test_RNN_change_dropout(self):
         for train, cuda in product((True, False), repeat=2):
             rnn = nn.RNN(100, 100, 2, dropout=0, nonlinearity='relu')
@@ -2131,12 +2122,12 @@ class TestNN(NNTestCase):
                     self.assertNotEqual(hy1, hy2)
 
                 if prev_output is not None:
-                    if not train:
-                        self.assertEqual(output1.data, prev_output)
-                        self.assertEqual(output2.data, prev_output)
-                    else:
+                    if train:
                         self.assertNotEqual(output1.data, prev_output)
                         self.assertNotEqual(output2.data, prev_output)
+                    else:
+                        self.assertEqual(output1.data, prev_output)
+                        self.assertEqual(output2.data, prev_output)
                 prev_output = output1.data
 
     def _verify_pixel_shuffle(self, input, output, upscale_factor):
@@ -2367,12 +2358,10 @@ class TestNNInit(TestCase):
     def test_calculate_gain_leaky_relu(self):
         for param in [None, 0, 0.01, 10]:
             gain = init.calculate_gain('leaky_relu', param)
-            if param is None:  # Default slope is 0.01
+            if param is None or param != 0 and param == 0.01:  # Default slope is 0.01
                 self.assertEqual(gain, 1.4141428569978354)
             elif param == 0:  # No slope = same gain as normal ReLU
                 self.assertEqual(gain, 1.4142135623730951)
-            elif param == 0.01:
-                self.assertEqual(gain, 1.4141428569978354)
             elif param == 10:
                 self.assertEqual(gain, 0.14071950894605836)
 
@@ -2384,7 +2373,9 @@ class TestNNInit(TestCase):
     def test_calculate_gain_only_accepts_valid_nonlinearities(self):
         for n in [2, 5, 25]:
             # Generate random strings of lengths that definitely aren't supported
-            random_string = ''.join([random.choice(string.ascii_lowercase) for i in range(n)])
+            random_string = ''.join(
+                [random.choice(string.ascii_lowercase) for _ in range(n)]
+            )
             with self.assertRaises(ValueError):
                 init.calculate_gain(random_string)
 
@@ -2600,11 +2591,7 @@ class TestNNInit(TestCase):
                             fan_in *= input_tensor[0, 0].numel()
                             fan_out *= input_tensor[0, 0].numel()
 
-                        if mode == 'fan_in':
-                            n = fan_in
-                        else:
-                            n = fan_out
-
+                        n = fan_in if mode == 'fan_in' else fan_out
                         expected_std = math.sqrt(2.0 / ((1 + a**2) * n))
                         bounds = expected_std * math.sqrt(3.0)
                         assert self._is_uniform(input_tensor, -bounds, bounds)
@@ -2633,11 +2620,7 @@ class TestNNInit(TestCase):
                             fan_in *= input_tensor[0, 0].numel()
                             fan_out *= input_tensor[0, 0].numel()
 
-                        if mode == 'fan_in':
-                            n = fan_in
-                        else:
-                            n = fan_out
-
+                        n = fan_in if mode == 'fan_in' else fan_out
                         expected_std = math.sqrt(2.0 / ((1 + a**2) * n))
                         assert self._is_normal(input_tensor, 0, expected_std)
 
@@ -2705,11 +2688,11 @@ class TestNNInit(TestCase):
 
 def add_test(test):
     test_name = test.get_name()
-    cuda_test_name = test_name + '_cuda'
+    cuda_test_name = f'{test_name}_cuda'
     if hasattr(TestNN, test_name):
-        raise RuntimeError('Found two tests with the same name: ' + test_name)
+        raise RuntimeError(f'Found two tests with the same name: {test_name}')
     if hasattr(TestNN, cuda_test_name):
-        raise RuntimeError('Found two tests with the same name: ' + cuda_test_name)
+        raise RuntimeError(f'Found two tests with the same name: {cuda_test_name}')
     setattr(TestNN, test_name, lambda self, test=test: test(self))
     setattr(TestNN, cuda_test_name, lambda self, test=test: test.test_cuda(self))
 

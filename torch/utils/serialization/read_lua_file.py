@@ -104,7 +104,7 @@ class TorchObject(object):
         return self._typename
 
     def __repr__(self):
-        return "TorchObject(%s, %s)" % (self._typename, repr(self._obj))
+        return f"TorchObject({self._typename}, {repr(self._obj)})"
 
     def __str__(self):
         return repr(self)
@@ -121,11 +121,11 @@ reader_registry = {}
 def get_python_class(typename):
     module, _, cls_name = typename.rpartition('.')
     if cls_name.startswith('Cuda'):
-        module = module + '.cuda'
+        module = f'{module}.cuda'
         cls_name = cls_name[4:]
-        if cls_name == 'Storage' or cls_name == 'Tensor':
-            cls_name = 'Float' + cls_name
-    return _import_dotted_name(module + '.' + cls_name)
+        if cls_name in ['Storage', 'Tensor']:
+            cls_name = f'Float{cls_name}'
+    return _import_dotted_name(f'{module}.{cls_name}')
 
 
 def make_tensor_reader(typename):
@@ -174,9 +174,9 @@ def register_torch_class(obj_kind, reader_factory):
             if t == 'Half' and prefix == '':
                 continue
             if prefix == 'Cuda' and t == 'Float':
-                cls_name = 'torch.Cuda' + obj_kind
+                cls_name = f'torch.Cuda{obj_kind}'
             else:
-                cls_name = 'torch.' + prefix + t + obj_kind
+                cls_name = f'torch.{prefix}{t}{obj_kind}'
             reader_registry[cls_name] = reader_factory(cls_name)
 
 
@@ -190,13 +190,13 @@ register_torch_class('Tensor', make_tensor_reader)
 
 def tds_Vec_reader(reader, version):
     length = reader.read_long()
-    return [reader.read() for i in range(length)]
+    return [reader.read() for _ in range(length)]
 
 
 def tds_Hash_reader(reader, version):
     length = reader.read_long()
     obj = {}
-    for i in range(length):
+    for _ in range(length):
         k = reader.read()
         v = reader.read()
         obj[k] = v
@@ -246,9 +246,13 @@ def nn_reader(cls):
     return read_nn_class
 
 
-reader_registry.update({('nn.' + name): nn_reader(module)
-                        for name, module in nn.__dict__.items()
-                        if name[0] != '_' and name[0].upper() == name[0]})
+reader_registry.update(
+    {
+        f'nn.{name}': nn_reader(module)
+        for name, module in nn.__dict__.items()
+        if name[0] != '_' and name[0].upper() == name[0]
+    }
+)
 
 
 def custom_reader(cls):
@@ -259,8 +263,10 @@ def custom_reader(cls):
             obj = base(reader, version)
             fn(reader, version, obj)
             return obj
-        reader_registry['nn.' + cls.__name__] = wrapper
+
+        reader_registry[f'nn.{cls.__name__}'] = wrapper
         return wrapper
+
     return reader_factory
 
 
@@ -270,7 +276,7 @@ def BatchNorm_reader(reader, version, obj):
         del obj.running_std
 
 for prefix in ['', 'Spatial', 'Volumetric']:
-    name = prefix + 'BatchNormalization'
+    name = f'{prefix}BatchNormalization'
     custom_reader(getattr(nn, name))(BatchNorm_reader)
 
 
@@ -303,14 +309,16 @@ def GradientReversal_reader(reader, version, obj):
 
 def registry_addon(fn):
     def wrapper_factory(module_name, *args, **kwargs):
-        module_name = 'nn.' + module_name
+        module_name = f'nn.{module_name}'
         build_fn = reader_registry[module_name]
 
         def wrapper(reader, version):
             obj = build_fn(reader, version)
             fn(obj, *args, **kwargs)
             return obj
+
         reader_registry[module_name] = wrapper
+
     return wrapper_factory
 
 
@@ -456,9 +464,7 @@ class T7Reader:
     def _read(self, fmt):
         sz = struct.calcsize(fmt)
         result = struct.unpack(fmt, self.f.read(sz))
-        if len(result) == 1:
-            return result[0]
-        return result
+        return result[0] if len(result) == 1 else result
 
     def read_boolean(self):
         return self.read_int() == 1
@@ -476,14 +482,10 @@ class T7Reader:
 
     def read_long_array(self, n):
         if self.long_size is not None:
-            lst = []
-            for i in range(n):
-                lst.append(self.read_long())
-            return lst
-        else:
-            arr = array('l')
-            arr.fromfile(self.f, n)
-            return arr.tolist()
+            return [self.read_long() for _ in range(n)]
+        arr = array('l')
+        arr.fromfile(self.f, n)
+        return arr.tolist()
 
     def read_float(self):
         return self._read('f')
@@ -501,9 +503,7 @@ class T7Reader:
     def read_number(self):
         x = self.read_double()
         # Extra checking for integral numbers:
-        if self.int_heuristic and x.is_integer():
-            return int(x)
-        return x
+        return int(x) if self.int_heuristic and x.is_integer() else x
 
     def memoize_index(fn):
         @wraps(fn)
@@ -537,10 +537,9 @@ class T7Reader:
             return reader_registry[cls_name](self, version)
         if self.unknown_classes:
             return TorchObject(cls_name, self.read())
-        raise T7ReaderException(("don't know how to deserialize Lua class "
-                                 "{}. If you want to ignore this error and load this object "
-                                 "as a dict, specify unknown_classes=True in reader's "
-                                 "constructor").format(cls_name))
+        raise T7ReaderException(
+            f"don't know how to deserialize Lua class {cls_name}. If you want to ignore this error and load this object as a dict, specify unknown_classes=True in reader's constructor"
+        )
 
     def _can_be_list(self, table):
         def is_natural(key):
@@ -558,7 +557,7 @@ class T7Reader:
     def read_table(self):
         size = self.read_int()
         table = hashable_uniq_dict()  # custom hashable dict, can be a key
-        for i in range(size):
+        for _ in range(size):
             k = self.read()
             v = self.read()
             table[k] = v
@@ -577,16 +576,20 @@ class T7Reader:
             return self.read_boolean()
         elif typeidx == TYPE_STRING:
             return self.read_string()
-        elif (typeidx == TYPE_FUNCTION or typeidx == TYPE_RECUR_FUNCTION or
-              typeidx == LEGACY_TYPE_RECUR_FUNCTION):
+        elif typeidx in [
+            TYPE_FUNCTION,
+            TYPE_RECUR_FUNCTION,
+            LEGACY_TYPE_RECUR_FUNCTION,
+        ]:
             return self.read_function()
         elif typeidx == TYPE_TORCH:
             return self.read_object()
         elif typeidx == TYPE_TABLE:
             return self.read_table()
         else:
-            raise T7ReaderException("unknown type id {}. The file may be "
-                                    "corrupted.".format(typeidx))
+            raise T7ReaderException(
+                f"unknown type id {typeidx}. The file may be corrupted."
+            )
 
 
 def load_lua(filename, **kwargs):

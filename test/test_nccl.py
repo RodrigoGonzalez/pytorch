@@ -28,7 +28,7 @@ class TestNCCL(TestCase):
 
     @unittest.skipIf(nGPUs < 2, "only one GPU detected")
     def test_reduce(self):
-        tensors = [torch.FloatTensor(128).uniform_() for i in range(nGPUs)]
+        tensors = [torch.FloatTensor(128).uniform_() for _ in range(nGPUs)]
         expected = torch.FloatTensor(128).zero_()
         for t in tensors:
             expected.add_(t)
@@ -40,7 +40,7 @@ class TestNCCL(TestCase):
 
     @unittest.skipIf(nGPUs < 2, "only one GPU detected")
     def test_all_reduce(self):
-        tensors = [torch.FloatTensor(128).uniform_() for i in range(nGPUs)]
+        tensors = [torch.FloatTensor(128).uniform_() for _ in range(nGPUs)]
         expected = torch.FloatTensor(128).zero_()
         for t in tensors:
             expected.add_(t)
@@ -53,7 +53,7 @@ class TestNCCL(TestCase):
 
     @unittest.skipIf(nGPUs < 2, "only one GPU detected")
     def test_all_gather(self):
-        inputs = [torch.FloatTensor(128).uniform_() for i in range(nGPUs)]
+        inputs = [torch.FloatTensor(128).uniform_() for _ in range(nGPUs)]
         expected = torch.cat(inputs, 0)
 
         inputs = [inputs[i].cuda(i) for i in range(nGPUs)]
@@ -69,7 +69,7 @@ class TestNCCL(TestCase):
         in_size = 32 * nGPUs
         out_size = 32
 
-        inputs = [torch.FloatTensor(in_size).uniform_() for i in range(nGPUs)]
+        inputs = [torch.FloatTensor(in_size).uniform_() for _ in range(nGPUs)]
         expected = torch.FloatTensor(in_size).zero_()
         for t in inputs:
             expected.add_(t)

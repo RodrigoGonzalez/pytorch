@@ -12,5 +12,7 @@ class FunctionBackend(object):
 
     def register_function(self, name, function_class):
         if self.function_classes.get(name):
-            raise RuntimeError("Trying to register second function under name " + name + " in " + type(self).__name__)
+            raise RuntimeError(
+                f"Trying to register second function under name {name} in {type(self).__name__}"
+            )
         self.function_classes[name] = function_class

@@ -25,13 +25,11 @@ class TestTorch(TestCase):
             'torch.DoubleTensor': 1e-8,
             'torch.FloatTensor': 1e-4,
         }
-        for tname, _prec in types.items():
+        for tname in types:
             v1 = torch.randn(100).type(tname)
             v2 = torch.randn(100).type(tname)
             res1 = torch.dot(v1, v2)
-            res2 = 0
-            for i, j in zip(v1, v2):
-                res2 += i * j
+            res2 = sum(i * j for i, j in zip(v1, v2))
             self.assertEqual(res1, res2)
 
     def _testMath(self, torchfn, mathfn):
@@ -1053,14 +1051,14 @@ class TestTorch(TestCase):
             # now for in place functions
             # in-place tensor is not broadcastable; test only guaranteed
             # to work by broadcasting other argument(s)
-            if not hasattr(large_expanded, fn + "_"):
+            if not hasattr(large_expanded, f"{fn}_"):
                 continue
 
             # need to clone largeExpanded so we can reuse, since functions are in-place
             large_expanded_clone = large_expanded.clone()
 
             def tensorfn_inplace(t0, t1, t2=None):
-                t0_fn = getattr(t0, fn + "_")
+                t0_fn = getattr(t0, f"{fn}_")
                 if fn == "lerp":
                     return t0_fn(t1, 0.5)
                 elif fn == "masked_scatter":
@@ -1075,6 +1073,7 @@ class TestTorch(TestCase):
                     return t0_fn(1.0, t1, t2)
                 else:
                     return t0_fn(t1)
+
             r1 = tensorfn_inplace(large_expanded, small_expanded, small2_expanded)
             r2 = tensorfn_inplace(large_expanded_clone, small, small2)
             # in-place pointwise operations don't actually work if the in-place
@@ -1145,6 +1144,7 @@ class TestTorch(TestCase):
                     return myfn(1.0, t1, t2)
                 else:
                     return myfn(t1)
+
             r0 = tensorfn(t0_fn, t1, t2)
             r1 = tensorfn(t1_fn, t0, t2)
             if torch.is_tensor(r0):
@@ -1158,16 +1158,17 @@ class TestTorch(TestCase):
                 t0 = cast(torch.randn(1, 6).float())
                 t1 = cast(torch.randn(2, 3).float())
                 t2 = cast(torch.randn(3, 2).float())
-                if not hasattr(t0, fn if not inplace else fn + "_"):
+                if not hasattr(t0, fn if not inplace else f"{fn}_"):
                     continue
-                t0_fn = getattr(t0, fn if not inplace else fn + "_")
-                t1_fn = getattr(t1, fn if not inplace else fn + "_")
-                t2_fn = getattr(t2, fn if not inplace else fn + "_")
+                t0_fn = getattr(t0, fn if not inplace else f"{fn}_")
+                t1_fn = getattr(t1, fn if not inplace else f"{fn}_")
+                t2_fn = getattr(t2, fn if not inplace else f"{fn}_")
 
                 def verify_fallback_warnings(w):
                     self.assertEqual(len(w), 1)
                     self.assertTrue(issubclass(w[0].category, UserWarning))
                     self.assertTrue("Falling back" in str(w[0].message))
+
                 with warnings.catch_warnings(record=True) as w:
                     warnings.simplefilter('always', UserWarning)
                     r0 = tensorfn(t0_fn, t1, t2)
@@ -2377,11 +2378,7 @@ class TestTorch(TestCase):
 
             u, piv = torch.pstrf(*args, **kwargs)
 
-            if uplo is False:
-                a_reconstructed = torch.mm(u, u.t())
-            else:
-                a_reconstructed = torch.mm(u.t(), u)
-
+            a_reconstructed = torch.mm(u, u.t()) if uplo is False else torch.mm(u.t(), u)
             piv = piv.long()
             a_permuted = a.index_select(0, piv).index_select(1, piv)
             self.assertEqual(a_permuted, a_reconstructed, 1e-14)
@@ -2413,7 +2410,7 @@ class TestTorch(TestCase):
         self.assertEqual(reference[1], self._consecutive((3, 3), 10), 0)
         self.assertEqual(reference[2], self._consecutive((3, 3), 19), 0)
         self.assertEqual(reference[0, 1], self._consecutive((3,), 4), 0)
-        self.assertEqual(reference[0:2], self._consecutive((2, 3, 3)), 0)
+        self.assertEqual(reference[:2], self._consecutive((2, 3, 3)), 0)
         self.assertEqual(reference[2, 2, 2], 27, 0)
         self.assertEqual(reference[:], self._consecutive((3, 3, 3)), 0)
 
@@ -2586,7 +2583,7 @@ class TestTorch(TestCase):
                 for k in range(1 if dim == 2 else o):
                     ii = [i, j, k]
                     ii[dim] = slice(0, idx.size(dim) + 1)
-                    idx[tuple(ii)] = torch.randperm(dim_size)[0:elems_per_row]
+                    idx[tuple(ii)] = torch.randperm(dim_size)[:elems_per_row]
 
     @staticmethod
     def _test_gather(self, cast, test_bounds=True):
@@ -2638,11 +2635,7 @@ class TestTorch(TestCase):
         idx = cast(torch.LongTensor().resize_(*idx_size))
         TestTorch._fill_indices(self, idx, dim, ([m, n, o])[dim], elems_per_row, m, n, o)
 
-        if is_scalar:
-            src = random.random()
-        else:
-            src = cast(torch.Tensor(*idx_size).normal_())
-
+        src = random.random() if is_scalar else cast(torch.Tensor(*idx_size).normal_())
         base = cast(torch.randn(m, n, o))
         actual = getattr(base.clone(), method)(dim, idx, src)
         expected = base.clone()
@@ -2701,10 +2694,7 @@ class TestTorch(TestCase):
         src = torch.randn(num_src)
         mask = torch.rand(num_src).clamp(0, 1).mul(2).floor().byte()
         dst = src.masked_select(mask)
-        dst2 = []
-        for i in range(num_src):
-            if mask[i]:
-                dst2 += [src[i]]
+        dst2 = [src[i] for i in range(num_src) if mask[i]]
         self.assertEqual(dst, torch.Tensor(dst2), 0)
 
     def test_masked_fill(self):
@@ -3005,11 +2995,7 @@ class TestTorch(TestCase):
                 dst3 = torch.LongTensor()
                 torch.nonzero(tensor, out=dst3)
                 if len(shape) == 1:
-                    dst = []
-                    for i in range(num_src):
-                        if tensor[i] != 0:
-                            dst += [i]
-
+                    dst = [i for i in range(num_src) if tensor[i] != 0]
                     self.assertEqual(dst1.select(1, 0), torch.LongTensor(dst), 0)
                     self.assertEqual(dst2.select(1, 0), torch.LongTensor(dst), 0)
                     self.assertEqual(dst3.select(1, 0), torch.LongTensor(dst), 0)
@@ -3122,7 +3108,7 @@ class TestTorch(TestCase):
         self.assertEqual(r[:, 50:].std(), 1, 0.2)
 
     def test_serialization(self):
-        a = [torch.randn(5, 5).float() for i in range(2)]
+        a = [torch.randn(5, 5).float() for _ in range(2)]
         b = [a[i % 2] for i in range(4)]
         b += [a[0].storage()]
         b += [a[0].storage()[1:4]]
@@ -3130,7 +3116,7 @@ class TestTorch(TestCase):
         t1 = torch.FloatTensor().set_(a[0].storage()[1:4], 0, (3,), (1,))
         t2 = torch.FloatTensor().set_(a[0].storage()[1:4], 0, (3,), (1,))
         b += [(t1.storage(), t1.storage(), t2.storage())]
-        b += [a[0].storage()[0:2]]
+        b += [a[0].storage()[:2]]
         for use_name in (False, True):
             with tempfile.NamedTemporaryFile() as f:
                 handle = f if not use_name else f.name
@@ -3633,9 +3619,9 @@ def make_neg_dim_test(name, tensor_arg, arg_constr, types, extra_dim=0):
 
             if INPLACE_METHOD in types:
                 a = x.clone()
-                getattr(a, name + '_')(*arg)
+                getattr(a, f'{name}_')(*arg)
                 b = x.clone()
-                getattr(b, name + '_')(*arg_neg)
+                getattr(b, f'{name}_')(*arg_neg)
                 self.assertEqual(a, b)
 
             if FUNCTIONAL in types:
@@ -3693,9 +3679,9 @@ for decl in neg_dim_tests:
     elif len(decl) == 5:
         name, tensor_arg, arg_constr, types, extra_dim = decl
 
-    test_name = 'test_' + name + '_neg_dim'
+    test_name = f'test_{name}_neg_dim'
 
-    assert not hasattr(TestTorch, test_name), "Duplicated test name: " + test_name
+    assert not hasattr(TestTorch, test_name), f"Duplicated test name: {test_name}"
     setattr(TestTorch, test_name, make_neg_dim_test(name, tensor_arg, arg_constr, types, extra_dim))
 
 if __name__ == '__main__':

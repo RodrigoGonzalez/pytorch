@@ -22,7 +22,7 @@ class SpatialConvolutionLocal(Module):
         self.padH = padH if padH is not None else padW
         self.oW = int(math.floor((self.padW * 2 + iW - self.kW) / self.dW)) + 1
         self.oH = int(math.floor((self.padH * 2 + iH - self.kH) / self.dH)) + 1
-        assert 1 <= self.oW and 1 <= self.oH
+        assert self.oW >= 1 and self.oH >= 1
 
         self.weight = torch.Tensor(self.oH, self.oW, nOutputPlane, nInputPlane, kH, kW)
         self.bias = torch.Tensor(nOutputPlane, self.oH, self.oW)
@@ -76,13 +76,13 @@ class SpatialConvolutionLocal(Module):
         if input.ndimension() == 3:
             if input.size(0) != self.nInputPlane or input.size(1) != self.iH or input.size(1) != self.iW:
                 raise RuntimeError(
-                    'Given input size: ({}x{}x{}) inconsistent with expected input size: ({}x{}x{}).'.format(
-                        input.size(0), input.size(1), input.size(2), self.nInputPlane, self.iH, self.iW))
+                    f'Given input size: ({input.size(0)}x{input.size(1)}x{input.size(2)}) inconsistent with expected input size: ({self.nInputPlane}x{self.iH}x{self.iW}).'
+                )
         elif input.ndimension() == 4:
             if input.size(1) != self.nInputPlane or input.size(2) != self.iH or input.size(3) != self.iW:
                 raise RuntimeError(
-                    'Given input size: ({}x{}x{}x{}) inconsistent with expected input size: (*x{}x{}x{}).'.format(
-                        input.size(0), input.size(1), input.size(2), input.size(3), self.nInputPlane, self.iH, self.iW))
+                    f'Given input size: ({input.size(0)}x{input.size(1)}x{input.size(2)}x{input.size(3)}) inconsistent with expected input size: (*x{self.nInputPlane}x{self.iH}x{self.iW}).'
+                )
         else:
             raise RuntimeError('3D or 4D (batch mode) tensor expected')
 
@@ -93,14 +93,13 @@ class SpatialConvolutionLocal(Module):
         if output.ndimension() == 3:
             if output.size(0) != self.nOutputPlane or output.size(1) != self.oH or output.size(2) != self.oW:
                 raise RuntimeError(
-                    'Given output size: ({}x{}x{}) inconsistent with expected output size: ({}x{}x{}).'.format(
-                        output.size(0), output.size(1), output.size(2), self.nOutputPlane, self.oH, self.oW))
+                    f'Given output size: ({output.size(0)}x{output.size(1)}x{output.size(2)}) inconsistent with expected output size: ({self.nOutputPlane}x{self.oH}x{self.oW}).'
+                )
         elif output.ndimension() == 4:
             if output.size(1) != self.nOutputPlane or output.size(2) != self.oH or output.size(3) != self.oW:
-                raise RuntimeError('Given output size: ({}x{}x{}x{}) inconsistent with expected output size: '
-                                   '(batchsize x{}x{}x{}).'.format(
-                                       output.size(0), output.size(1), output.size(2),
-                                       output.size(3), self.nOutputPlane, self.oH, self.oW))
+                raise RuntimeError(
+                    f'Given output size: ({output.size(0)}x{output.size(1)}x{output.size(2)}x{output.size(3)}) inconsistent with expected output size: (batchsize x{self.nOutputPlane}x{self.oH}x{self.oW}).'
+                )
         else:
             raise RuntimeError('3D or 4D(batch mode) tensor expected')
 
@@ -186,12 +185,12 @@ class SpatialConvolutionLocal(Module):
 
     def __tostring__(self, ):
         s = super(SpatialConvolution, self).__repr__()
-        s += '({} -> {}, {}x{}, {}x{}'.format(self.nInputPlane, self.nOutputPlane, self.iW, self.iH, self.kW, self.kH)
+        s += f'({self.nInputPlane} -> {self.nOutputPlane}, {self.iW}x{self.iH}, {self.kW}x{self.kH}'
         if self.dW != 1 or self.dH != 1 or self.padW != 0 or self.padH != 0:
-            s += ', {}, {}'.format(self.dW, self.dH)
+            s += f', {self.dW}, {self.dH}'
 
         if self.padW != 0 or self.padH != 0:
-            s += ', {}, {}'.format(self.padW, self.padH)
+            s += f', {self.padW}, {self.padH}'
 
         s += ')'
         return s

@@ -18,8 +18,7 @@ class MaxPool1d(Function):
 
     def forward(self, input):
         if (input.dim() != 3):
-            raise ValueError('expected 3D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 3D input (got {input.dim()}D input)')
 
         input2d = input.unsqueeze(2)    # size = N*C*1*L
         backend = type2backend[type(input)]
@@ -373,8 +372,7 @@ class AdaptiveMaxPool1d(Function):
 
     def forward(self, input):
         if input.dim() != 3:
-            raise ValueError('expected 3D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 3D input (got {input.dim()}D input)')
 
         input2d = input.unsqueeze(2)    # size = N*C*1*L
         backend = type2backend[type(input)]
@@ -452,8 +450,7 @@ class AdaptiveAvgPool1d(Function):
 
     def forward(self, input):
         if input.dim() != 3:
-            raise ValueError('expected 3D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError(f'expected 3D input (got {input.dim()}D input)')
 
         input2d = input.unsqueeze(2)    # size = N*C*1*L
         backend = type2backend[type(input)]

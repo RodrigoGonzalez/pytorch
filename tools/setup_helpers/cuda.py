@@ -10,10 +10,7 @@ def find_nvcc():
     proc = Popen(['which', 'nvcc'], stdout=PIPE, stderr=PIPE)
     out, err = proc.communicate()
     out = out.decode().strip()
-    if len(out) > 0:
-        return os.path.dirname(out)
-    else:
-        return None
+    return os.path.dirname(out) if len(out) > 0 else None
 
 
 if check_env_flag('NO_CUDA'):
@@ -28,12 +25,6 @@ else:
             cuda_path = find_nvcc()
         else:
             cudart_path = ctypes.util.find_library('cudart')
-            if cudart_path is not None:
-                cuda_path = os.path.dirname(cudart_path)
-            else:
-                cuda_path = None
-        if cuda_path is not None:
-            CUDA_HOME = os.path.dirname(cuda_path)
-        else:
-            CUDA_HOME = None
+            cuda_path = os.path.dirname(cudart_path) if cudart_path is not None else None
+        CUDA_HOME = os.path.dirname(cuda_path) if cuda_path is not None else None
     WITH_CUDA = CUDA_HOME is not None

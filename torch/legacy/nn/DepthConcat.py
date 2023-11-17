@@ -74,7 +74,7 @@ class DepthConcat(Concat):
 
     def accGradParameters(self, input, gradOutput, scale=1):
         offset = 0
-        for i, module in enumerate(self.modules):
+        for module in self.modules:
             currentOutput = module.output
             gradOutputWindow = self.windowNarrow(gradOutput, currentOutput, offset)
             module.accGradParameters(input, gradOutputWindow, scale)
@@ -99,7 +99,7 @@ class DepthConcat(Concat):
 
     def accUpdateGradParameters(self, input, gradOutput, lr):
         offset = 0
-        for i, module in enumerate(self.modules):
+        for module in self.modules:
             currentOutput = module.output
             gradOutputWindow = self.windowNarrow(gradOutput, currentOutput, offset)
             module.accUpdateGradParameters(input, gradOutputWindow, lr)

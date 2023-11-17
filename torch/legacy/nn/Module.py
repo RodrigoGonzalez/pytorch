@@ -12,7 +12,7 @@ class Module(object):
         self._backend = torch._thnn.type2backend[type(self.output)]
 
     def __repr__(self):
-        return 'nn.' + self.__class__.__name__
+        return f'nn.{self.__class__.__name__}'
 
     def parameters(self):
         has_weight = hasattr(self, 'weight') and self.weight is not None

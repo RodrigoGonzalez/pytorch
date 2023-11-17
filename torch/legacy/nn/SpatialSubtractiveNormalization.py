@@ -25,7 +25,7 @@ class SpatialSubtractiveNormalization(Module):
         kdim = self.kernel.ndimension()
 
         # check args
-        if kdim != 2 and kdim != 1:
+        if kdim not in [2, 1]:
             raise ValueError('SpatialSubtractiveNormalization averaging kernel must be 2D or 1D')
 
         if (self.kernel.size(0) % 2) == 0 or (kdim == 2 and (self.kernel.size(1) % 2) == 0):
@@ -36,10 +36,7 @@ class SpatialSubtractiveNormalization(Module):
 
         # padding values
         padH = int(math.floor(self.kernel.size(0) / 2))
-        padW = padH
-        if kdim == 2:
-            padW = int(math.floor(self.kernel.size(1) / 2))
-
+        padW = int(math.floor(self.kernel.size(1) / 2)) if kdim == 2 else padH
         # create convolutional mean extractor
         self.meanestimator = Sequential()
         self.meanestimator.add(SpatialZeroPadding(padW, padW, padH, padH))
@@ -87,7 +84,7 @@ class SpatialSubtractiveNormalization(Module):
             if self._coef is None:
                 self._coef = self.coef.new()
 
-            self.ones.resize_as_(input[0:1]).fill_(1)
+            self.ones.resize_as_(input[:1]).fill_(1)
             coef = self.meanestimator.updateOutput(self.ones).squeeze(0)
             self._coef.resize_as_(coef).copy_(coef)  # make contiguous for view
             size = list(coef.size())

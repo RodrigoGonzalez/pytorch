@@ -8,8 +8,7 @@ class Dropout(InplaceFunction):
     def __init__(self, p=0.5, train=False, inplace=False):
         super(Dropout, self).__init__()
         if p < 0 or p > 1:
-            raise ValueError("dropout probability has to be between 0 and 1, "
-                             "but got {}".format(p))
+            raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
         self.p = p
         self.train = train
         self.inplace = inplace
